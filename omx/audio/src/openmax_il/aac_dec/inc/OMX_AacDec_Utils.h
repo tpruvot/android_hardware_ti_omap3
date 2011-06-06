@@ -569,6 +569,7 @@ typedef struct {
     /* Set to 1 if buffer is last buffer */
     unsigned short bLastBuffer;
     unsigned short bConcealBuffer;
+    unsigned short bFirstFrameRec;
 }AACDEC_UAlgInBufParamStruct;
 
 /* ======================================================================= */
@@ -936,7 +937,8 @@ typedef struct AACDEC_COMPONENT_PRIVATE
     OMX_BOOL reconfigInputPort;
     OMX_BOOL reconfigOutputPort;
     OMX_U8 OutPendingPR;
-
+    OMX_BOOL bFirstOutBuffSent;
+    OMX_BOOL errorSent;
     struct OMX_TI_Debug dbg;
 
     /** Indicate when first output buffer received from DSP **/

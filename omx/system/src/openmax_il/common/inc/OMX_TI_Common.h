@@ -19,11 +19,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 /* =============================================================================
-*             Texas Instruments OMAP(TM) Platform Software
-*  (c) Copyright Texas Instruments, Incorporated.  All Rights Reserved.
-*
-*  Use of this software is controlled by the terms and conditions found 
-*  in the license agreement under which this software has been supplied.
 * =========================================================================== */
 /** OMX_TI_Common.h
   *  The LCML header file contains the definitions used by both the
@@ -117,5 +112,27 @@ typedef enum OMX_TI_SEVERITYTYPE {
         OMX_MEMFREE_STRUCT(_pStruct_);\
     }
 
+/* ======================================================================= */
+/**
+ *  M A C R O FOR EventHandler
+ */
+/* ======================================================================= */
+#define OMX_HANDLE_ERROR(_eError, _eCode, _hComp, _eState)\
+do {                                                        \
+	_eError = _eCode;                                       \
+        _eState = OMX_StateInvalid;                             \
+	if (!_hComp->errorSent) { \
+                OMX_ERROR5(_hComp->dbg, "*Fatal Error : %x\n", eError); \
+		_hComp->cbInfo.EventHandler(_hComp->pHandle,		\
+					_hComp->pHandle->pApplicationPrivate,\
+					OMX_EventError,	\
+					_eCode,	\
+					OMX_TI_ErrorCritical,	\
+					NULL);	\
+		_hComp->errorSent = OMX_TRUE;	\
+        } else { \
+                OMX_PRINT1(_hComp->dbg, "*Fatal Error : %x NOT sent\n", eError); \
+        } \
+} while(0)
 #endif /*  end of  #ifndef __OMX_TI_COMMON_H__ */
 /* File EOF */

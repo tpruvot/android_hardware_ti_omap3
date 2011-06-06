@@ -158,12 +158,7 @@ void* AACDEC_ComponentThread (void* pThreadData)
         } 
         else if (-1 == status) {
             OMX_ERROR4(pComponentPrivate->dbg, "%d :: Error in Select\n", __LINE__);
-            pComponentPrivate->cbInfo.EventHandler (pHandle,
-                                                    pHandle->pApplicationPrivate,
-                                                    OMX_EventError,
-                                                    OMX_ErrorInsufficientResources,
-                                                    OMX_TI_ErrorSevere,
-                                                    "Error from COmponent Thread in select");
+            OMX_HANDLE_ERROR(eError, OMX_ErrorInvalidState, pComponentPrivate, pComponentPrivate->curState);
             eError = OMX_ErrorInsufficientResources;
         }
         else if (FD_ISSET (pComponentPrivate->cmdPipe[0], &rfds)) {

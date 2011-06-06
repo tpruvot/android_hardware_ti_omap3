@@ -316,7 +316,7 @@ OMX_ERRORTYPE OMX_ComponentInit (OMX_HANDLETYPE hComp)
     pComponentPrivate->reconfigInputPort = 0;
     pComponentPrivate->reconfigOutputPort = 0;
     pComponentPrivate->framemode = 0;
-
+    pComponentPrivate->bFirstOutBuffSent = OMX_FALSE;
 
     for (i=0; i < MAX_NUM_OF_BUFS_AACDEC; i++) {
         pComponentPrivate->pInputBufHdrPending[i] = NULL;

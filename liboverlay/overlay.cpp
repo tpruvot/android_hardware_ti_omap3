@@ -80,6 +80,7 @@ typedef struct
   uint32_t dataReady;    // Only updated by the data side
 
   pthread_mutex_t lock;
+  pthread_mutex_t streamCtrlLock;
   pthread_mutexattr_t attr;
 
   uint32_t streamEn;
@@ -275,6 +276,13 @@ static int create_shared_data(overlay_shared_t **shared)
     if (ret == 0 && (ret = pthread_mutex_init(&p->lock, &p->attr)) != 0) {
         LOGE("Failed to initialize overlay mutex\n");
     }
+    if (ret = pthread_mutex_init(&p->streamCtrlLock, &p->attr) != 0) {
+        LOGE("Failed to open streaming control lock!\n");
+        if (pthread_mutex_destroy(&p->lock))
+            LOGE("Failed to uninitialize overlay mutex\n");
+        if (pthread_mutexattr_destroy(&p->attr))
+            LOGE("Failed to uninitialize the overlay mutex attr!\n");
+    }
     if (ret != 0) {
         munmap(p, size);
         close(fd);
@@ -298,6 +306,10 @@ static void destroy_shared_data( int shared_fd, overlay_shared_t *shared, bool c
 
         if (pthread_mutexattr_destroy(&shared->attr)) {
             LOGE("Failed to uninitialize the overlay mutex attr!\n");
+        }
+
+        if (pthread_mutex_destroy(&shared->streamCtrlLock)) {
+            LOGE("Failed to uninitialize stream control mutex!\n");
         }
         shared->marker = 0;
     }
@@ -380,6 +392,7 @@ static int disable_streaming_locked(overlay_shared_t *shared, int ovly_fd)
 {
     int ret = 0;
 
+    pthread_mutex_lock(&shared->streamCtrlLock);
     if (shared->streamEn) {
         ret = v4l2_overlay_stream_off( ovly_fd );
         if (ret) {
@@ -389,6 +402,7 @@ static int disable_streaming_locked(overlay_shared_t *shared, int ovly_fd)
             shared->streamEn = 0;
         }
     }
+    pthread_mutex_unlock(&shared->streamCtrlLock);
 
     return ret;
 }
@@ -946,12 +960,21 @@ int overlay_dequeueBuffer(struct overlay_data_device_t *dev,
 
     int rc;
     int i = -1;
+    bool streamLockTaken = false;
 
     pthread_mutex_lock(&ctx->shared->lock);
+    if (ctx->qd_buf_count > 0) {
+        pthread_mutex_lock(&ctx->shared->streamCtrlLock);
+        streamLockTaken = true;
+    }
+
     if ( ctx->shared->streamingReset )
     {
         ctx->shared->streamingReset = 0;
+        ctx->qd_buf_count = 0;
         pthread_mutex_unlock(&ctx->shared->lock);
+        if (streamLockTaken)
+            pthread_mutex_unlock(&ctx->shared->streamCtrlLock);
         return ALL_BUFFERS_FLUSHED;
     }
     pthread_mutex_unlock(&ctx->shared->lock);
@@ -965,11 +988,14 @@ int overlay_dequeueBuffer(struct overlay_data_device_t *dev,
             rc = -EINVAL;
         } else {
             *((int *)buffer) = i;
-            ctx->qd_buf_count --;
+            android_atomic_dec(&ctx->qd_buf_count);
         }
     } else {
         rc = -1;
     }
+
+    if (streamLockTaken)
+        pthread_mutex_unlock(&ctx->shared->streamCtrlLock);
 
     return rc;
 }
@@ -983,6 +1009,7 @@ int overlay_queueBuffer(struct overlay_data_device_t *dev,
     if ( ctx->shared->streamingReset )
     {
         ctx->shared->streamingReset = 0;
+        ctx->qd_buf_count = 0;
         pthread_mutex_unlock(&ctx->shared->lock);
         return ALL_BUFFERS_FLUSHED;
     }
@@ -996,7 +1023,7 @@ int overlay_queueBuffer(struct overlay_data_device_t *dev,
 
     int rc = v4l2_overlay_q_buf( ctx->ctl_fd, (int)buffer );
     if (rc == 0 && ctx->qd_buf_count < ctx->num_buffers) {
-        ctx->qd_buf_count ++;
+        android_atomic_inc(&ctx->qd_buf_count);
     }
 
     return rc;

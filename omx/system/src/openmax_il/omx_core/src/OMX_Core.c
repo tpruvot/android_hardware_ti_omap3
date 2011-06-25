@@ -50,17 +50,17 @@ ComponentTable componentTable[MAX_TABLE_SIZE];
 char * sRoleArray[60][20];
 char compName[60][200];
 
-char *tComponentName[MAXCOMP][2] = {
+char *tComponentName[MAXCOMP][3] = {
     /*video and image components */
     //{"OMX.TI.JPEG.decoder", "image_decoder.jpeg" },
     {"OMX.TI.JPEG.Encoder", "image_encoder.jpeg"},
     //{"OMX.TI.Video.Decoder", "video_decoder.h263"},
-    {"OMX.TI.720P.Decoder", "video_decoder.avc"},
-    {"OMX.TI.Video.Decoder", "video_decoder.avc"},
-    //{"OMX.TI.Video.Decoder", "video_decoder.mpeg2"},
-    {"OMX.TI.720P.Decoder", "video_decoder.mpeg4"},
     {"OMX.TI.Video.Decoder", "video_decoder.mpeg4"},
     {"OMX.TI.Video.Decoder", "video_decoder.wmv"},
+    {"OMX.TI.Video.Decoder", "video_decoder.avc"},
+    {"OMX.TI.720P.Decoder", "video_decoder.avc"},
+    {"OMX.TI.720P.Decoder", "video_decoder.mpeg4"},
+    //{"OMX.TI.Video.Decoder", "video_decoder.mpeg2"},
     {"OMX.TI.Video.encoder", "video_encoder.mpeg4"},
     {"OMX.TI.Video.encoder", "video_encoder.h263"},
     {"OMX.TI.Video.encoder", "video_encoder.avc"},

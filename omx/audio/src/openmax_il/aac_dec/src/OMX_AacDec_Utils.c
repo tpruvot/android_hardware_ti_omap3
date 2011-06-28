@@ -275,7 +275,6 @@ OMX_ERRORTYPE AACDEC_Fill_LCMLInitParams(OMX_HANDLETYPE pComponent,
                              AACDEC_UAlgInBufParamStruct);
         pTemp_lcml->pIpParam->bLastBuffer = 0;
         pTemp_lcml->pIpParam->bConcealBuffer = 0;
-        pTemp_lcml->pIpParam->bFirstFrameRec = 0;
 
         pTemp->nFlags = NORMAL_BUFFER_AACDEC;
         ((AACDEC_COMPONENT_PRIVATE *) pTemp->pPlatformPrivate)->pHandle = pHandle;
@@ -733,7 +732,6 @@ OMX_U32 AACDEC_HandleCommand (AACDEC_COMPONENT_PRIVATE *pComponentPrivate)
                         OMX_ERROR4(pComponentPrivate->dbg, "%d :: Error : InitMMCodec failed...>>>>>> \n",__LINE__);
                         /* send an event to client */
                         /* client should unload the component if the codec is not able to load */
-                        eError = OMX_ErrorInvalidState;
                         pComponentPrivate->cbInfo.EventHandler (pHandle, 
                                                 pHandle->pApplicationPrivate,
                                                 OMX_EventError, 
@@ -1995,7 +1993,6 @@ OMX_ERRORTYPE AACDEC_HandleDataBuf_FromApp(OMX_BUFFERHEADERTYPE* pBufHeader,
         OMX_ERROR4(pComponentPrivate->dbg, "%d :: The pBufHeader is not found in the list\n",__LINE__);
         goto EXIT;
     }
-
     if (eDir == OMX_DirInput) {
         pComponentPrivate->nHandledEmptyThisBuffers++;
         if (pComponentPrivate->curState == OMX_StateIdle){
@@ -2252,18 +2249,7 @@ OMX_ERRORTYPE AACDEC_HandleDataBuf_FromApp(OMX_BUFFERHEADERTYPE* pBufHeader,
                         if(!pComponentPrivate->reconfigInputPort){
                             AACDEC_SetPending(pComponentPrivate,pBufHeader,OMX_DirInput,__LINE__);
                             OMX_PRBUFFER2(pComponentPrivate->dbg, "Calling LCML_QueueBuffer Line %d\n",__LINE__);
-                            OMX_PRBUFFER4(pComponentPrivate->dbg, "input pBufHeader->nFilledLen = %ld nFlags = 0x%x\n\n", \
-                                                                   pBufHeader->nFilledLen, pBufHeader->nFlags);
-                            if(pComponentPrivate->bFirstOutBuffSent == OMX_FALSE){
-                       //         if(pBufHeader->nFlags & OMX_BUFFERFLAG_ENDOFFRAME){
-                                   if(pBufHeader->nFilledLen > 4) {
-                                   LOGE("pLcmlHdr->pIpParam->bFirstFrameRec = 1");
-                                    pLcmlHdr->pIpParam->bFirstFrameRec = 1;
-                            }
-                        }
-                        else if (pComponentPrivate->bFirstOutBuffSent == OMX_TRUE){
-                                 pLcmlHdr->pIpParam->bFirstFrameRec = 0;
-                        }
+                            OMX_PRBUFFER2(pComponentPrivate->dbg, "input pBufHeader->nFilledLen = %ld\n\n", pBufHeader->nFilledLen);
                             eError = LCML_QueueBuffer(pLcmlHandle->pCodecinterfacehandle,
                                                       EMMCodecInputBuffer,
                                                       pBufHeader->pBuffer,
@@ -2693,7 +2679,7 @@ OMX_ERRORTYPE AACDEC_LCML_Callback (TUsnCodecEvent event,void * args [10])
                 }
 #endif
                 AACDEC_ClearPending(pComponentPrivate,pLcmlHdr->pBufHdr,OMX_DirOutput,__LINE__);
-		if (pComponentPrivate->pMarkData) {
+			if (pComponentPrivate->pMarkData) {
 				pLcmlHdr->pBufHdr->pMarkData = pComponentPrivate->pMarkData;
 				pLcmlHdr->pBufHdr->hMarkTargetComponent = pComponentPrivate->hMarkTargetComponent;
 			}
@@ -2709,7 +2695,6 @@ OMX_ERRORTYPE AACDEC_LCML_Callback (TUsnCodecEvent event,void * args [10])
                                                    pLcmlHdr->pBufHdr->nOutputPortIndex,
                                                    pLcmlHdr->pBufHdr->nFlags, NULL);
 				pComponentPrivate->bIsEOFSent = 0;
-                                pLcmlHdr->pOpParam->isLastBuffer = 0;
 				OMX_PRINT2(pComponentPrivate->dbg, "%d : UTIL: EOS flag has been propagated\n",__LINE__);
 			}
 
@@ -2759,8 +2744,6 @@ OMX_ERRORTYPE AACDEC_LCML_Callback (TUsnCodecEvent event,void * args [10])
                                                               );
                     pComponentPrivate->nFillBufferDoneCount++;
                     SignalIfAllBuffersAreReturned(pComponentPrivate);
-		    pComponentPrivate->bFirstOutBuffSent = OMX_TRUE;
-
                 }
 
                 pComponentPrivate->nOutStandingFillDones--;

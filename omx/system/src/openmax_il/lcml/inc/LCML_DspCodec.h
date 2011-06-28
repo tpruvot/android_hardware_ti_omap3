@@ -77,11 +77,10 @@
 
 #define DSP_ERROR_EXIT(err, msg, label)                \
     if (DSP_FAILED (err)) {                        \
-        LOGE("\n****************LCML ERROR : DSP ************************\n");\
-        LOGE("Error: %s : Err Num = %lx", msg, err);  \
+        printf("\n****************LCML ERROR : DSP ************************\n");\
+        printf("Error: %s : Err Num = %lx", msg, err);  \
         eError = OMX_ErrorHardware;                \
-        DSP_STATUS eStatus = DSPManager_Force_Recovery(); \
-        LOGE("\n****************LCML ERROR : DSP ************************\n");\
+        printf("\n****************LCML ERROR : DSP ************************\n");\
         goto label;                               \
     }                                              /**/
 
@@ -298,7 +297,6 @@ typedef struct LCML_DSP_INTERFACE
     OMX_BOOL ReUseMap;
     pthread_mutex_t m_isStopped_mutex;
 
-    OMX_BOOL vid_play_no_invalidate_flag;
 }LCML_DSP_INTERFACE;
 
 #endif /* __MMDSPCODEC_H__ */

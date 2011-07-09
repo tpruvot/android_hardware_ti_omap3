@@ -62,9 +62,10 @@ char *tComponentName[MAXCOMP][3] = {
     {"OMX.TI.720P.Decoder", "video_decoder.mpeg4"},
     //{"OMX.TI.Video.Decoder", "video_decoder.mpeg2"},
     {"OMX.TI.Video.encoder", "video_encoder.mpeg4"},
+    {"OMX.TI.720P.Encoder", "video_encoder.mpeg4"},
     {"OMX.TI.Video.encoder", "video_encoder.h263"},
     {"OMX.TI.Video.encoder", "video_encoder.avc"},
-    {"OMX.TI.720P.Encoder", "video_encoder.mpeg4"},
+    {"OMX.TI.720P.Encoder", "video_encoder.avc"},
     //{"OMX.TI.VPP", "iv_renderer.yuv.overlay"},
     //{"OMX.TI.Camera", "camera.yuv"},
 

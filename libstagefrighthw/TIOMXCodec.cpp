@@ -130,7 +130,7 @@ uint32_t TIOMXCodec::getBufferCount()
     def.nPortIndex = kPortIndexOutput;
     status_t err = mOMX->getParameter(mNode, OMX_IndexParamPortDefinition, &def, sizeof(def));
     if(err != OK) {
-        LOGD("Error while retrieving the buffer count: %d", def.nBufferCountActual);
+        LOGD("Error while retrieving the buffer count: %d", (int) def.nBufferCountActual);
     }
     return def.nBufferCountActual;
 }

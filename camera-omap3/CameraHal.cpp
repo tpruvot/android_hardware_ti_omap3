@@ -1544,11 +1544,15 @@ void CameraHal::nextPreview()
                     //LOGW("Had to adjust the timestamp. Clock went back in time. mCurrentTime = %lld, mPrevTime = %llu", mCurrentTime[overlaybufferindex], mPrevTime);
                     mCurrentTime[overlaybufferindex] = mPrevTime + frameInterval;
                 }
-#ifdef OMAP_ENHANCEMENT
+                // unlock mRecordingLock before sending frame to CameraService to avoid
+                // deadlock when in the same time releaseRecordingFrame is invoked.
+                mRecordingLock.unlock();
+#ifdef OMAP_ENHANCEMENT_OMAPZOOM
                 mDataCbTimestamp(mCurrentTime[overlaybufferindex], CAMERA_MSG_VIDEO_FRAME, mVideoBuffer[overlaybufferindex], mCallbackCookie, 0, 0);
 #else
                 mDataCbTimestamp(mCurrentTime[overlaybufferindex], CAMERA_MSG_VIDEO_FRAME, mVideoBuffer[overlaybufferindex], mCallbackCookie);
 #endif
+                mRecordingLock.lock();
                 mPrevTime = mCurrentTime[overlaybufferindex];
             }
         }

@@ -1441,7 +1441,7 @@ int overlay_control_context_t::overlay_commit(struct overlay_control_device_t *d
     int videopipezorder = stage->zorder;
     int transkey = stage->colorkey;
 
-#ifndef TARGET_OMAP4
+#if (0) //ifndef TARGET_OMAP4
     /** NOTE: In order to support HDMI without app explicitly requesting for
     * the screen ID, this is the alternative path check for the overlay manager.
     * (here assumption is : overlay manager is set from command line
@@ -1499,7 +1499,7 @@ int overlay_control_context_t::overlay_commit(struct overlay_control_device_t *d
     * (here assumption is : overlay manager is set from command line
     * prior to playing the media clip.)
     */
-    strmatch = strcmp(overlaymanagername, "tv");
+    strmatch = strcmp(overlaymanagername, "hdtv");
     if (!strmatch) {
         stage->panel = OVERLAY_ON_TV;
     }

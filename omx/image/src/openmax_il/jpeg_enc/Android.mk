@@ -9,11 +9,13 @@ LOCAL_SRC_FILES:= \
 	src/OMX_JpegEnc_Utils.c \
 	src/OMX_JpegEncoder.c \
 
-TI_OMX_IMAGE ?= $(TOP)/hardware/ti/omap3/omx/image/src/openmax_il
+TI_OMX_TOP ?= $(TOP)/hardware/ti/omap3/omx
+TI_OMX_IMAGE ?= $(TI_OMX_TOP)/image/src/openmax_il
+TI_OMX_SYSTEM ?= $(TI_OMX_TOP)/system/src/openmax_il
 
 TI_OMX_COMP_C_INCLUDES ?= \
-	$(TOP)/hardware/ti/omap3/omx/system/src/openmax_il/lcml/inc \
-	$(TOP)/hardware/ti/omap3/omx/system/src/openmax_il/common/inc \
+	$(TI_OMX_SYSTEM)/lcml/inc \
+	$(TI_OMX_SYSTEM)/common/inc \
 	$(TOP)/frameworks/base/include/media/stagefright/openmax \
 	$(TOP)/hardware/ti/omap3/dspbridge/libbridge/inc \
 
@@ -38,11 +40,9 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES:= test/JPEGTestEnc.c
 
-TI_OMX_IMAGE ?= $(TOP)/hardware/ti/omap3/omx/image/src/openmax_il
-
 TI_OMX_COMP_C_INCLUDES ?= \
-	$(TOP)/hardware/ti/omap3/omx/system/src/openmax_il/lcml/inc \
-	$(TOP)/hardware/ti/omap3/omx/system/src/openmax_il/common/inc \
+	$(TI_OMX_SYSTEM)/lcml/inc \
+	$(TI_OMX_SYSTEM)/common/inc \
 	$(TOP)/frameworks/base/include/media/stagefright/openmax \
 	$(TOP)/hardware/ti/omap3/dspbridge/libbridge/inc \
 

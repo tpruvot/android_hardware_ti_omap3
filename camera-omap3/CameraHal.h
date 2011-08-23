@@ -91,23 +91,23 @@ extern "C" {
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-#define VIDEO_DEVICE        "/dev/video5"
+#define VIDEO_DEVICE        "/dev/video3"
 #define MIN_WIDTH           128
 #define MIN_HEIGHT          96
 #define PICTURE_WIDTH   3264 /* 5mp - 2560. 8mp - 3280 */ /* Make sure it is a multiple of 16. */
 #define PICTURE_HEIGHT  2448 /* 5mp - 2048. 8mp - 2464 */ /* Make sure it is a multiple of 16. */
-#define PREVIEW_WIDTH 176
+#define PREVIEW_WIDTH  176
 #define PREVIEW_HEIGHT 144
-#define CAPTURE_8MP_WIDTH        3280
-#define CAPTURE_8MP_HEIGHT       2464
-#define PIXEL_FORMAT           V4L2_PIX_FMT_UYVY
-#define LOG_FUNCTION_NAME    LOGD("%d: %s() ENTER", __LINE__, __FUNCTION__);
+#define CAPTURE_8MP_WIDTH    3280
+#define CAPTURE_8MP_HEIGHT   2464
+#define PIXEL_FORMAT         V4L2_PIX_FMT_UYVY
+#define LOG_FUNCTION_NAME         LOGD("%d: %s() ENTER", __LINE__, __FUNCTION__);
 #define LOG_FUNCTION_NAME_EXIT    LOGD("%d: %s() EXIT", __LINE__, __FUNCTION__);
-#define VIDEO_FRAME_COUNT_MAX    NUM_OVERLAY_BUFFERS_REQUESTED
-#define MAX_CAMERA_BUFFERS    NUM_OVERLAY_BUFFERS_REQUESTED
+#define VIDEO_FRAME_COUNT_MAX  NUM_OVERLAY_BUFFERS_REQUESTED
+#define MAX_CAMERA_BUFFERS     NUM_OVERLAY_BUFFERS_REQUESTED
 #define COMPENSATION_OFFSET 20
-#define CONTRAST_OFFSET 100
-#define BRIGHTNESS_OFFSET 100
+#define CONTRAST_OFFSET    100
+#define BRIGHTNESS_OFFSET  100
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
 #define DEFAULT_THUMB_WIDTH     320
@@ -220,7 +220,7 @@ typedef struct {
 // 3A FW
 #define LIB3AFW             "libMMS3AFW.so"
 
-#define PHOTO_PATH          "/tmp/photo_%02d.%s"
+#define PHOTO_PATH          "/cache/photo_%02d.%s"
 
 #define PROC_THREAD_PROCESS         0x5
 #define PROC_THREAD_EXIT            0x6

@@ -74,18 +74,22 @@ const char CameraHal::supportedFPS [] = "33,30,25,24,20,15,10";
 const char CameraHal::supportedThumbnailSizes []= "512x384,320x240,80x60,0x0";
 const char CameraHal::PARAMS_DELIMITER []= ",";
 
-const supported_resolution CameraHal::supportedPictureRes[] = { {3264, 2448} , {2560, 2048} ,
-                                                     {2048, 1536} , {1600, 1200} ,
-                                                     {1280, 1024} , {1152, 968} ,
-                                                     {1280, 960} , {800, 600},
-                                                     {640, 480}   , {320, 240} };
+const supported_resolution CameraHal::supportedPictureRes[] = {
+    {3264, 2448} , {2560, 2048} ,
+    {2048, 1536} , {1600, 1200} ,
+    {1280, 1024} , {1152, 968} ,
+    {1280, 960} , {800, 600},
+    {640, 480}   , {320, 240}
+};
 
-const supported_resolution CameraHal::supportedPreviewRes[] = { {1280, 720}, {800, 480},
-                                                     {720, 576}, {720, 480},
-                                                     {992, 560}, {864, 480}, {848, 480},
-                                                     {768, 576}, {640, 480},
-                                                     {320, 240}, {352, 288}, {240, 160},
-                                                     {176, 144}, {128, 96}};
+const supported_resolution CameraHal::supportedPreviewRes[] = {
+    {1280, 720}, {800, 480},
+    {720, 576}, {720, 480},
+    {992, 560}, {864, 480}, {848, 480},
+    {768, 576}, {640, 480},
+    {320, 240}, {352, 288}, {240, 160},
+    {176, 144}, {128, 96}
+};
 
 int camerahal_strcat(char *dst, const char *src, size_t size)
 {
@@ -102,23 +106,23 @@ int camerahal_strcat(char *dst, const char *src, size_t size)
 }
 
 CameraHal::CameraHal()
-			:mParameters(),
-			mOverlay(NULL),
-			mPreviewRunning(0),
-			mRecordingFrameSize(0),
-			mVideoBufferCount(0),
-			nOverlayBuffersQueued(0),
-			nCameraBuffersQueued(0),
-			mfirstTime(0),
-			pictureNumber(0),
+    :mParameters(),
+    mOverlay(NULL),
+    mPreviewRunning(0),
+    mRecordingFrameSize(0),
+    mVideoBufferCount(0),
+    nOverlayBuffersQueued(0),
+    nCameraBuffersQueued(0),
+    mfirstTime(0),
+    pictureNumber(0),
 #ifdef FW3A
-			fobj(NULL),
+    fobj(NULL),
 #endif
-			file_index(0),
-			mflash(2),
-			mcapture_mode(1),
-			mcaf(0),
-			j(0)
+    file_index(0),
+    mflash(2),
+    mcapture_mode(1),
+    mcaf(0),
+    j(0)
 {
 #if PPM_INSTRUMENTATION || PPM_INSTRUMENTATION_ABS
     gettimeofday(&ppm_start, NULL);

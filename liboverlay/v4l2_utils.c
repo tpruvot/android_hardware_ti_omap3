@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-//#define OVERLAY_DEBUG 1
+#define OVERLAY_DEBUG 1
 #define LOG_TAG "Overlay-V4L2"
 
 #include <fcntl.h>
@@ -176,7 +176,9 @@ void v4l2_overlay_dump_state(int fd)
 static void error(int fd, const char *msg)
 {
   LOGE("Error = %s from %s. errno = %d", strerror(errno), msg, errno);
+#ifdef OVERLAY_DEBUG
   v4l2_overlay_dump_state(fd);
+#endif
 }
 
 static int v4l2_overlay_ioctl(int fd, int req, void *arg, const char* msg)
@@ -329,8 +331,8 @@ int v4l2_overlay_set_position(int fd, int32_t x, int32_t y, int32_t w, int32_t h
     LOGV("v4l2_overlay_set_position:: w=%d h=%d", format.fmt.win.w.width, format.fmt.win.w.height);
 
     if (mRotateOverlay) {
-        w = 480;
-        h = 800;
+        w = 854;
+        h = 480;
         x = 0;
         y = 0;
     }
@@ -402,11 +404,12 @@ int v4l2_overlay_set_rotation(int fd, int degree, int step, uint32_t mirror)
 
     int ret;
     struct v4l2_control ctrl;
+#ifdef HAVE_LIBMIRROR
     memset(&ctrl, 0, sizeof(ctrl));
     ctrl.id = V4L2_CID_VFLIP;
     ctrl.value = mirror;
     ret = v4l2_overlay_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "set FLIP");
-
+#endif
     memset(&ctrl, 0, sizeof(ctrl));
     ctrl.id = V4L2_CID_ROTATE;
     ctrl.value = degree;
@@ -436,6 +439,7 @@ int v4l2_overlay_get_rotation(int fd, int* degree, int step, uint32_t* mirror)
     }
     *degree = control.value;
 
+#ifdef HAVE_LIBMIRROR
     memset(&control, 0, sizeof(control));
     control.id = V4L2_CID_VFLIP;
     ret = ioctl (fd, VIDIOC_G_CTRL, &control);
@@ -445,6 +449,9 @@ int v4l2_overlay_get_rotation(int fd, int* degree, int step, uint32_t* mirror)
     }
 
     *mirror = control.value;
+#else
+    *mirror = 0;
+#endif //HAVE_LIBMIRROR
 
     return ret;
 }
@@ -787,7 +794,7 @@ int v4l2_overlay_dq_buf(int fd, int *index, int memtype, void* buffer, size_t le
     }
     ret = v4l2_overlay_ioctl(fd, VIDIOC_DQBUF, &buf, "dqbuf");
     if (ret)
-      return errno;
+      return ret;
     *index = buf.index;
     return 0;
 }
@@ -992,7 +999,18 @@ int v4l2_overlay_get_s3d_format(int fd, uint32_t *fmt, uint32_t *order, uint32_t
 
     return ret;
 }
+int v4l2_overlay_take_constraint(int fd, uint32_t id)
+{
+    LOG_FUNCTION_NAME
+    int ret;
+    struct v4l2_control ctrl;
+    memset(&ctrl, 0, sizeof(ctrl));
+    ctrl.id = V4L2_CID_PRIVATE_TAKE_CONSTRAINT;
+    ctrl.value = id;
+    ret = v4l2_overlay_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "set constraint");
 
+    return ret;
+}
 
 /*
 Copies 2D buffer to 1D buffer. All heights, widths etc. should be in bytes.
@@ -1034,4 +1052,3 @@ int32_t Util_Memcpy_2Dto1D(void* pSrc2D, uint32_t nHeight2D, uint32_t nWidth2D, 
    LOGE("Frame dump done");
    return eError;
 }
-

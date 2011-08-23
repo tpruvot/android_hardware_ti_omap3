@@ -32,8 +32,8 @@
 #define NUM_BUFFERS_TO_BE_QUEUED_FOR_OPTIMAL_PERFORMANCE    2
 #define NUM_OVERLAY_BUFFERS_REQUESTED  (2)
 /* These values should come from Surface Flinger */
-#define LCD_WIDTH 864
-#define LCD_HEIGHT 480
+#define LCD_WIDTH 540
+#define LCD_HEIGHT 960
 #define MAX_NUM_OVERLAYS 3
 #define FULLHD_WIDTH 1920
 #define FULLHD_HEIGHT 1080
@@ -41,17 +41,13 @@
 
 #else
 #define NUM_BUFFERS_TO_BE_QUEUED_FOR_OPTIMAL_PERFORMANCE    3
-#ifndef OVERLAY_NUM_REQBUFFERS
-#define NUM_OVERLAY_BUFFERS_REQUESTED  (6)
-#else
-#define NUM_OVERLAY_BUFFERS_REQUESTED  (OVERLAY_NUM_REQBUFFERS)
-#endif
+#define NUM_OVERLAY_BUFFERS_REQUESTED  (4)
 /* These values should come from Surface Flinger */
-#define LCD_WIDTH 800
-#define LCD_HEIGHT 480
+#define LCD_WIDTH 480
+#define LCD_HEIGHT 854
 #define TV_WIDTH 720
 #define TV_HEIGHT 480
-#define MAX_NUM_OVERLAYS 2
+#define MAX_NUM_OVERLAYS 3
 #define NUM_OVERLAY_BUFFERS_MAX NUM_OVERLAY_BUFFERS_REQUESTED
 
 #endif
@@ -63,7 +59,8 @@
 /* Used in setAttributes */
 #define CACHEABLE_BUFFERS 0x1
 #define MAINTAIN_COHERENCY 0x2
-#define OPTIMAL_QBUF_CNT    0x4
+#define TAKE_CONSTRAINT 0x3
+#define OPTIMAL_QBUF_CNT 0x4
 #define SET_CLONE_FD 0x8
 
 #ifdef TARGET_OMAP4
@@ -102,4 +99,3 @@
 
 
 #endif  // OVERLAY_COMMON_H_
-

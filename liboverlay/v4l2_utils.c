@@ -160,14 +160,6 @@ void v4l2_overlay_dump_state(int fd)
         return;
     LOGI("output crop:\n");
     dump_crop(&crop);
-/*
-    crop.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-    ret = ioctl(fd, VIDIOC_G_CROP, &crop);
-    if (ret < 0)
-        return;
-    LOGI("ovelay crop:\n");
-    dump_crop(&crop);
-*/
 }
 #else
 #define v4l2_overlay_dump_state(x)
@@ -195,13 +187,13 @@ static int v4l2_overlay_ioctl(int fd, int req, void *arg, const char* msg)
 int configure_pixfmt(struct v4l2_pix_format *pix, int32_t fmt,
                      uint32_t w, uint32_t h)
 {
-    LOG_FUNCTION_NAME
-
     int fd;
 
-   pix->field = V4L2_FIELD_NONE;
+    LOG_FUNCTION_NAME
 
-   switch (fmt) {
+    pix->field = V4L2_FIELD_NONE;
+
+    switch (fmt) {
     case OVERLAY_FORMAT_RGBA_8888:
         pix->pixelformat = V4L2_PIX_FMT_RGB32;
         break;

@@ -65,8 +65,8 @@ extern "C"
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
-#define MAX_DISPLAY_CNT 1
-#define MAX_MANAGER_CNT 3
+#define MAX_DISPLAY_CNT 2
+#define MAX_MANAGER_CNT 2
 
 #define LOG_FUNCTION_NAME_ENTRY LOGV("*** Calling %s() ++",  __FUNCTION__);
 #define LOG_FUNCTION_NAME_EXIT  LOGV("*** Calling %s() --",  __FUNCTION__);
@@ -608,7 +608,7 @@ overlay_t* overlay_control_context_t::overlay_createOverlay(struct overlay_contr
     // if video/dev1 aka mOmapOverlay[0] is not available, then surface flinger will retry
     if (self->mOmapOverlays[0] == NULL)
     {
-        // this is succesful case to get video/dev1
+        // this is succesful case to get dev/video1
         overlayid = 0;
     }
 
@@ -1674,7 +1674,7 @@ void* overlay_data_context_t::overlay_getBufferAddress(struct overlay_data_devic
     if ((int)buffer >= 0 && (int)buffer < ctx->omap_overlay->num_buffers)
     {
         ctx->omap_overlay->mapping_data->ptr = ctx->omap_overlay->buffers[(int)buffer];
-        LOGE("Buffer/%d/addr=%08lx/len=%d", (int)buffer, (unsigned long)ctx->omap_overlay->mapping_data->ptr,
+        LOGD("Buffer/%d/addr=%08lx/len=%d", (int)buffer, (unsigned long)ctx->omap_overlay->mapping_data->ptr,
                                                                            ctx->omap_overlay->buffers_len[(int)buffer]);
     }
 

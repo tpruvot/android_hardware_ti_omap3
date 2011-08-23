@@ -33,7 +33,7 @@
 
 #include <hardware/overlay.h>
 #include "overlay_common.h"
-#include "v4l2_utils.h"
+#include "Mot_v4l2_utils.h"
 
 #define OVERLAY_DATA_MARKER  (0x68759746) // OVRLYSHM on phone keypad
 

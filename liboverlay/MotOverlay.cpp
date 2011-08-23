@@ -35,7 +35,7 @@
 
 extern "C"
 {
-#include "v4l2_utils.h"
+#include "Mot_v4l2_utils.h"
 }
 
 #include <pthread.h>

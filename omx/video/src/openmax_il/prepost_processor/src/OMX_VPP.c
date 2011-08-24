@@ -290,7 +290,8 @@ OMX_ERRORTYPE VPP_AllocateBuffer(OMX_IN OMX_HANDLETYPE hComponent,
         if(nPortIndex == OMX_VPP_INPUT_OVERLAY_PORT){
             /* Allocate buffer for overlay process only one buffer*/
             if(pComponentPrivate->RGBbuffer == NULL){
-                OMX_MALLOC(pComponentPrivate->RGBbuffer, nBufSize);
+                OMX_MALLOC_SIZE_DSPALIGN(pComponentPrivate->RGBbuffer, nBufSize,
+                OMX_U8);
             }
         }
     }
@@ -308,20 +309,9 @@ OMX_ERRORTYPE VPP_AllocateBuffer(OMX_IN OMX_HANDLETYPE hComponent,
     pBufferHdr->nTickCount       = 0;
     pBufferHdr->nTimeStamp     = 0;
  
-    OMX_MALLOC(pBufferStart, nBufSize + 32 + 256);
+    OMX_MALLOC_SIZE_DSPALIGN(pBufferStart, nBufSize, OMX_U8);
 
-    pBufferAligned = pBufferStart;
-    while ((((int)pBufferAligned) & 0x1f) != 0)
-    {
-        pBufferAligned++;  
-    }
-
-    VPP_DPRINT ("VPP::Inside the AllocateBuffer pBuffer =%p\n",pBufferHdr);
-    VPP_DPRINT ("VPP:: Inside the AllocateBuffer   pBuffer->pBuffer =%p\n" ,  pBufferHdr->pBuffer);
-    VPP_DPRINT ("VPP::Inside the AllocateBuffer --3  pBuffer =%p\n",pBufferHdr);
-
-    pBufferAligned            = ((OMX_U8*)pBufferAligned) +128;
-    pBufferHdr->pBuffer            = pBufferAligned;
+    pBufferHdr->pBuffer            = pBufferStart;
     pComponentPrivate->sCompPorts[nPortIndex].pVPPBufHeader[nCount].pBufferStart = pBufferStart;
     pComponentPrivate->sCompPorts[nPortIndex].nBufferCount++;
 
@@ -661,60 +651,54 @@ OMX_ERRORTYPE OMX_ComponentInit (OMX_HANDLETYPE hComp)
 #endif
 
     /*Allocate the memory for Component private data area*/
-   OMX_MALLOC(pHandle->pComponentPrivate, sizeof(VPP_COMPONENT_PRIVATE));
+    OMX_MALLOC(pHandle->pComponentPrivate, sizeof(VPP_COMPONENT_PRIVATE));
 
     ((VPP_COMPONENT_PRIVATE *)pHandle->pComponentPrivate)->pHandle = pHandle;
 
     pComponentPrivate = (VPP_COMPONENT_PRIVATE *)pHandle->pComponentPrivate;
-    
+
     /*Allcocating FrameStatus*/
-    OMX_MALLOC(pComponentPrivate->pIpFrameStatus, sizeof(GPPToVPPInputFrameStatus) + 256);
-    pTemp = ((OMX_U8*)(pComponentPrivate->pIpFrameStatus))+128;
-    pComponentPrivate->pIpFrameStatus =  (GPPToVPPInputFrameStatus *)pTemp;
-    OMX_MALLOC(pComponentPrivate->pOpYUVFrameStatus, sizeof(GPPToVPPOutputFrameStatus) + 256); 
-    pTemp = ((OMX_U8*)(pComponentPrivate->pOpYUVFrameStatus))+128;
-    pComponentPrivate->pOpYUVFrameStatus = (GPPToVPPOutputFrameStatus *)pTemp;
-    OMX_MALLOC(pComponentPrivate->pOpRGBFrameStatus, sizeof(GPPToVPPOutputFrameStatus) + 256); 
-    pTemp = ((OMX_U8*)(pComponentPrivate->pOpRGBFrameStatus))+128;
-    pComponentPrivate->pOpRGBFrameStatus = (GPPToVPPOutputFrameStatus *)pTemp;
+    OMX_MALLOC_SIZE_DSPALIGN(pComponentPrivate->pIpFrameStatus, sizeof(GPPToVPPInputFrameStatus), OMX_U8);
+    OMX_MALLOC_SIZE_DSPALIGN(pComponentPrivate->pOpYUVFrameStatus, sizeof(GPPToVPPOutputFrameStatus), OMX_U8);
+    OMX_MALLOC_SIZE_DSPALIGN(pComponentPrivate->pOpRGBFrameStatus, sizeof(GPPToVPPOutputFrameStatus), OMX_U8);
 
 #ifdef KHRONOS_1_1
     strcpy((char *)pComponentPrivate->componentRole.cRole,"iv_renderer.yuv.overlay");
-#endif 
-    
+#endif
+
     /*Init pIpFrameStatus*/
     /*Frame Width and Height*/
     pComponentPrivate->pIpFrameStatus->ulInWidth             = DEFAULT_WIDTH;
     pComponentPrivate->pIpFrameStatus->ulInHeight            = 220; /*Default value for StdCompRoleTest*/
     pComponentPrivate->pIpFrameStatus->ulCInOffset           = DEFAULT_WIDTH * 220;  /* offset of the C frame in the   *
-                                                                    * buffer (equal to zero if there *
-                                                                    * is no C frame)                 */
+                                                                                      * buffer (equal to zero if there *
+                                                                                      * is no C frame)                 */
     /* crop */
-    pComponentPrivate->pIpFrameStatus->ulInXstart            = 0;          
+    pComponentPrivate->pIpFrameStatus->ulInXstart            = 0;
     pComponentPrivate->pIpFrameStatus->ulInXsize             = 0; /*176 Default value for StdCompRoleTest */
-    pComponentPrivate->pIpFrameStatus->ulInYstart            = 0;          
+    pComponentPrivate->pIpFrameStatus->ulInYstart            = 0;
     pComponentPrivate->pIpFrameStatus->ulInYsize             = 0; /* 220 Default value for StdCompRoleTest*/
-    
+
     /* zoom*/
-    pComponentPrivate->pIpFrameStatus->ulZoomFactor          = 1 << 10;       
-    pComponentPrivate->pIpFrameStatus->ulZoomLimit           = 1 << 10;      
-    pComponentPrivate->pIpFrameStatus->ulZoomSpeed           = 0;          
-    
-    pComponentPrivate->pIpFrameStatus->ulFrostedGlassOvly    = OMX_FALSE;        
-    pComponentPrivate->pIpFrameStatus->ulLightChroma         = OMX_TRUE;          
-    pComponentPrivate->pIpFrameStatus->ulLockedRatio         = OMX_FALSE;          
-    pComponentPrivate->pIpFrameStatus->ulMirror              = OMX_FALSE;      
-    pComponentPrivate->pIpFrameStatus->ulRGBRotation         = 0;    
+    pComponentPrivate->pIpFrameStatus->ulZoomFactor          = 1 << 10;
+    pComponentPrivate->pIpFrameStatus->ulZoomLimit           = 1 << 10;
+    pComponentPrivate->pIpFrameStatus->ulZoomSpeed           = 0;
+
+    pComponentPrivate->pIpFrameStatus->ulFrostedGlassOvly    = OMX_FALSE;
+    pComponentPrivate->pIpFrameStatus->ulLightChroma         = OMX_TRUE;
+    pComponentPrivate->pIpFrameStatus->ulLockedRatio         = OMX_FALSE;
+    pComponentPrivate->pIpFrameStatus->ulMirror              = OMX_FALSE;
+    pComponentPrivate->pIpFrameStatus->ulRGBRotation         = 0;
     pComponentPrivate->pIpFrameStatus->ulYUVRotation         = 0;
-    
-    pComponentPrivate->pIpFrameStatus->ulContrastType        = 0;  
+
+    pComponentPrivate->pIpFrameStatus->ulContrastType        = 0;
     pComponentPrivate->pIpFrameStatus->ulVideoGain           = 1 << 6;   /*Video Gain (contrast) in VGPOP ranges from 0 to 127, being 64 = Gain 1 (no contrast)*/
-    
-    pComponentPrivate->pIpFrameStatus->ulXoffsetFromCenter16 = 0;        
-    pComponentPrivate->pIpFrameStatus->ulYoffsetFromCenter16 = 0;        
+
+    pComponentPrivate->pIpFrameStatus->ulXoffsetFromCenter16 = 0;
+    pComponentPrivate->pIpFrameStatus->ulYoffsetFromCenter16 = 0;
     pComponentPrivate->pIpFrameStatus->ulOutPitch = 0;  /*Not supported at OMX level*/
     pComponentPrivate->pIpFrameStatus->ulAlphaRGB = 0; /*Not supported at OMX level*/
-    
+
     /*Init pComponentPrivate->pOpYUVFrameStatus */
     pComponentPrivate->pOpYUVFrameStatus->ulOutWidth            = DEFAULT_WIDTH;
     pComponentPrivate->pOpYUVFrameStatus->ulOutHeight           = DEFAULT_HEIGHT;
@@ -747,22 +731,22 @@ OMX_ERRORTYPE OMX_ComponentInit (OMX_HANDLETYPE hComp)
 
     OMX_MALLOC(pComponentPrivate->cComponentName,  VPP_MAX_NAMESIZE + 1);
     strncpy(pComponentPrivate->cComponentName, cVPPName, VPP_MAX_NAMESIZE);
-    
+
     OMX_MALLOC(pComponentPrivate->colorKey, 3 * sizeof(OMX_U8));
     pTemp = memcpy (pComponentPrivate->colorKey, (OMX_U8 *)colorKey,(3 * sizeof(OMX_U8)));
     if(pTemp == NULL){
         eError = OMX_ErrorUndefined;
         goto EXIT;
     }
-    
-    OMX_MALLOC(pComponentPrivate->tVPPIOConf, sizeof(VPPIOConf)); 
-    
+
+    OMX_MALLOC(pComponentPrivate->tVPPIOConf, sizeof(VPPIOConf));
+
     eError=VPP_Initialize_PrivateStruct(pComponentPrivate);
     if (eError != OMX_ErrorNone) {
         VPP_DPRINT ("VPP::Error=0x%X returned from VPP_Initialize_PrivateStruct\n",eError);
         goto EXIT;
     }
-  
+
     /* load the ResourceManagerProxy thread*/
 #ifdef RESOURCE_MANAGER_ENABLED
     eError = RMProxy_NewInitalizeEx(OMX_COMPONENTTYPE_VPP);
@@ -772,7 +756,7 @@ OMX_ERRORTYPE OMX_ComponentInit (OMX_HANDLETYPE hComp)
     }
 #endif
 
-    /* start the component thread */      
+    /* start the component thread */
     eError = VPP_Start_ComponentThread(pHandle);
     if (eError != OMX_ErrorNone) {
         VPP_DPRINT ("VPP::Error=0x%X returned from Start_ComponentThread\n",eError);
@@ -780,7 +764,7 @@ OMX_ERRORTYPE OMX_ComponentInit (OMX_HANDLETYPE hComp)
     }
 
     eError = OMX_ErrorNone;
-    
+
 EXIT:
     if(eError != OMX_ErrorNone){
         /* LinkedList_DisplayAll(&AllocList); */
@@ -794,7 +778,7 @@ EXIT:
 /**
   *  SetCallbacks() Sets application callbacks to the component
   *
-  * This method will update application callbacks 
+  * This method will update application callbacks
   * the application.
   *
   * @param pComp         handle for this instance of the component
@@ -806,7 +790,7 @@ EXIT:
   **/
 /*-------------------------------------------------------------------*/
 static OMX_ERRORTYPE VPP_SetCallbacks (OMX_HANDLETYPE pComponent,
-                                        OMX_CALLBACKTYPE* pCallBacks, 
+                                        OMX_CALLBACKTYPE* pCallBacks,
                                         OMX_PTR pAppData)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
@@ -899,16 +883,16 @@ EXIT:
   *         OMX_Error_BadParameter   The input parameter pointer is null
   **/
 /*-------------------------------------------------------------------*/
-static OMX_ERRORTYPE VPP_SendCommand (OMX_IN OMX_HANDLETYPE phandle, 
-                                      OMX_IN OMX_COMMANDTYPE Cmd, 
+static OMX_ERRORTYPE VPP_SendCommand (OMX_IN OMX_HANDLETYPE phandle,
+                                      OMX_IN OMX_COMMANDTYPE Cmd,
                                       OMX_IN OMX_U32 nParam,
-                                      OMX_IN OMX_PTR pCmdData) 
+                                      OMX_IN OMX_PTR pCmdData)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     int nRet;
     OMX_COMPONENTTYPE *pHandle = (OMX_COMPONENTTYPE *)phandle;
-    VPP_COMPONENT_PRIVATE *pComponentPrivate = NULL; 
-    OMX_MARKTYPE *pMarkType = NULL; 
+    VPP_COMPONENT_PRIVATE *pComponentPrivate = NULL;
+    OMX_MARKTYPE *pMarkType = NULL;
 
 
     OMX_CHECK_CMD(phandle, OMX_TRUE, OMX_TRUE);
@@ -920,56 +904,56 @@ static OMX_ERRORTYPE VPP_SendCommand (OMX_IN OMX_HANDLETYPE phandle,
         goto EXIT;
     }
 
-    switch(Cmd) 
+    switch(Cmd)
     {
     case OMX_CommandStateSet:
-		  pComponentPrivate->toState = nParam;
-		VPP_DPRINT("VPP:: OMX_CommandStateSet: tostate %d\n", nParam);
-		if (nParam == OMX_StateIdle && pComponentPrivate->curState == OMX_StateExecuting) {
-			pComponentPrivate->bIsStopping = OMX_TRUE;
-			VPP_DPRINT("VPP:: Is stopping!!\n");
-		}
+        pComponentPrivate->toState = nParam;
+        VPP_DPRINT("VPP:: OMX_CommandStateSet: tostate %d\n", nParam);
+        if (nParam == OMX_StateIdle && pComponentPrivate->curState == OMX_StateExecuting) {
+            pComponentPrivate->bIsStopping = OMX_TRUE;
+            VPP_DPRINT("VPP:: Is stopping!!\n");
+        }
         break;
     case OMX_CommandPortDisable:
-        
+
         if ((nParam >= NUM_OF_VPP_PORTS) && (nParam != OMX_ALL)) { 
             eError = OMX_ErrorBadPortIndex;
             break;
         }
         else if(nParam != OMX_ALL) {  /*If only one port is requested might come from the application, then disable from here to avoid race condition*/
             VPP_DPRINT("set port %d as diabled\n", nParam);
-			pComponentPrivate->sCompPorts[nParam].pPortDef.bEnabled=OMX_FALSE;
-			if (pComponentPrivate->sCompPorts[nParam].pPortDef.bPopulated) {
-			    pComponentPrivate->bDisableIncomplete[nParam] = OMX_TRUE;
-			} else {
+            pComponentPrivate->sCompPorts[nParam].pPortDef.bEnabled=OMX_FALSE;
+            if (pComponentPrivate->sCompPorts[nParam].pPortDef.bPopulated) {
+                pComponentPrivate->bDisableIncomplete[nParam] = OMX_TRUE;
+            } else {
                 pComponentPrivate->bDisableIncomplete[nParam] = OMX_FALSE;
-		        pComponentPrivate->cbInfo.EventHandler (pComponentPrivate->pHandle,
-												pComponentPrivate->pHandle->pApplicationPrivate,
-												OMX_EventCmdComplete,
-												OMX_CommandPortDisable,
-												nParam,
-												NULL);		
-			}
-		} else { /* nParam == 0xFFFFFFFF */
-			int i;
-			for (i = 0; i < NUM_OF_VPP_PORTS; i ++) {
-				VPP_DPRINT("set port %d as disabled\n", i);
-			    pComponentPrivate->sCompPorts[i].pPortDef.bEnabled=OMX_FALSE;
-				if (pComponentPrivate->sCompPorts[i].pPortDef.bPopulated) {
-				    pComponentPrivate->bDisableIncomplete[i] = OMX_TRUE;
-				} else {
+                pComponentPrivate->cbInfo.EventHandler (pComponentPrivate->pHandle,
+                                                        pComponentPrivate->pHandle->pApplicationPrivate,
+                                                        OMX_EventCmdComplete,
+                                                        OMX_CommandPortDisable,
+                                                        nParam,
+                                                        NULL);
+            }
+        } else { /* nParam == 0xFFFFFFFF */
+            int i;
+            for (i = 0; i < NUM_OF_VPP_PORTS; i ++) {
+                VPP_DPRINT("set port %d as disabled\n", i);
+                pComponentPrivate->sCompPorts[i].pPortDef.bEnabled=OMX_FALSE;
+                if (pComponentPrivate->sCompPorts[i].pPortDef.bPopulated) {
+                    pComponentPrivate->bDisableIncomplete[i] = OMX_TRUE;
+                } else {
                     pComponentPrivate->bDisableIncomplete[i] = OMX_FALSE;
-		            pComponentPrivate->cbInfo.EventHandler (pComponentPrivate->pHandle,
-												pComponentPrivate->pHandle->pApplicationPrivate,
-												OMX_EventCmdComplete,
-												OMX_CommandPortDisable,
-												i,
-												NULL);	
-				}
-			}
-		}
+                    pComponentPrivate->cbInfo.EventHandler (pComponentPrivate->pHandle,
+                                                            pComponentPrivate->pHandle->pApplicationPrivate,
+                                                            OMX_EventCmdComplete,
+                                                            OMX_CommandPortDisable,
+                                                            i,
+                                                            NULL);
+                }
+            }
+        }
         break;
-        
+
     case OMX_CommandPortEnable:
     case OMX_CommandFlush:
         /*if invalid port, send error, and don't write to any pipe*/
@@ -1020,7 +1004,7 @@ static OMX_ERRORTYPE VPP_SendCommand (OMX_IN OMX_HANDLETYPE phandle,
             eError = OMX_ErrorHardware;
             goto EXIT;
         }
-        
+
 EXIT:
     return eError;
 }
@@ -1037,13 +1021,13 @@ EXIT:
   *         OMX_Error_BadParameter   The input parameter pointer is null
   **/
 /*-------------------------------------------------------------------*/
-static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp, 
-                                       OMX_INDEXTYPE nParamIndex, 
+static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
+                                       OMX_INDEXTYPE nParamIndex,
                                        OMX_PTR pComponentParameterStructure)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     OMX_COMPONENTTYPE* pHandle= (OMX_COMPONENTTYPE*)hComp;
-    VPP_COMPONENT_PRIVATE *pComponentPrivate = NULL; 
+    VPP_COMPONENT_PRIVATE *pComponentPrivate = NULL;
     OMX_U8 *pTemp = NULL;
     OMX_CHECK_CMD(hComp, pComponentParameterStructure, OMX_TRUE);
     pComponentPrivate = (VPP_COMPONENT_PRIVATE*)pHandle->pComponentPrivate;
@@ -1053,12 +1037,12 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
     if ( pComponentPrivate->curState == OMX_StateInvalid ) {
         OMX_SET_ERROR_BAIL(eError, OMX_ErrorIncorrectStateOperation);
     }
- 
-    switch(nParamIndex) 
+
+    switch(nParamIndex)
     {
     case OMX_IndexParamImageInit:
-        pTemp = memcpy(pComponentParameterStructure, 
-                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeImage, 
+        pTemp = memcpy(pComponentParameterStructure,
+                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeImage,
                         sizeof(OMX_PORT_PARAM_TYPE));
         if(pTemp == NULL){
             eError = OMX_ErrorUndefined;
@@ -1066,8 +1050,8 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
         }
         break;
     case OMX_IndexParamAudioInit:
-        pTemp = memcpy(pComponentParameterStructure, 
-                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeAudio, 
+        pTemp = memcpy(pComponentParameterStructure,
+                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeAudio,
                         sizeof(OMX_PORT_PARAM_TYPE));
         if(pTemp == NULL){
             eError = OMX_ErrorUndefined;
@@ -1076,7 +1060,7 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
         break;
     case OMX_IndexParamVideoInit:
         pTemp = memcpy(pComponentParameterStructure,
-                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeVideo, 
+                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeVideo,
                         sizeof(OMX_PORT_PARAM_TYPE));
         if(pTemp == NULL){
             eError = OMX_ErrorUndefined;
@@ -1084,8 +1068,8 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
         }
         break;
     case OMX_IndexParamOtherInit:
-        pTemp = memcpy(pComponentParameterStructure, 
-                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeOthers, 
+        pTemp = memcpy(pComponentParameterStructure,
+                        ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeOthers,
                         sizeof(OMX_PORT_PARAM_TYPE));
         if(pTemp == NULL){
             eError = OMX_ErrorUndefined;
@@ -1097,19 +1081,19 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
             OMX_PARAM_PORTDEFINITIONTYPE *pComponentParam =(OMX_PARAM_PORTDEFINITIONTYPE *)pComponentParameterStructure;
             OMX_U32 portindex = pComponentParam->nPortIndex;
             if(portindex >= 0 && portindex < NUM_OF_VPP_PORTS){ /*The validation  should be done in two parts, if the portindex is a wrong number the next validation could generate a segmentation fault*/
-				VPP_DPRINT ("VPP::Inside the GetParameter portindex = %d (%d)\n",(int)portindex, pComponentPrivate->sCompPorts[portindex].pPortDef.nPortIndex);
-				if(portindex == pComponentPrivate->sCompPorts[portindex].pPortDef.nPortIndex){
-	                pTemp = memcpy(pComponentParameterStructure, 
-	                    &pComponentPrivate->sCompPorts[portindex].pPortDef, 
-	                    sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
-	                if(pTemp == NULL){
-	                    eError = OMX_ErrorUndefined;
-	                    break;
-	                }
-				}
-				else{
-					eError = OMX_ErrorBadPortIndex;
-				}
+                VPP_DPRINT ("VPP::Inside the GetParameter portindex = %d (%d)\n",(int)portindex, pComponentPrivate->sCompPorts[portindex].pPortDef.nPortIndex);
+                if(portindex == pComponentPrivate->sCompPorts[portindex].pPortDef.nPortIndex) {
+                    pTemp = memcpy(pComponentParameterStructure,
+                            &pComponentPrivate->sCompPorts[portindex].pPortDef,
+                            sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
+                    if(pTemp == NULL){
+                        eError = OMX_ErrorUndefined;
+                        break;
+                    }
+                }
+                else{
+                    eError = OMX_ErrorBadPortIndex;
+                }
             }
             else{
                 eError = OMX_ErrorBadPortIndex;
@@ -1124,8 +1108,8 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
                     eError = OMX_ErrorNoMore;
                 }
                 else {
-                    pTemp = memcpy(pComponentParameterStructure, 
-                        pComponentPrivate->pInPortFormat, 
+                    pTemp = memcpy(pComponentParameterStructure,
+                        pComponentPrivate->pInPortFormat,
                         sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                     if(pTemp == NULL){
                         eError = OMX_ErrorUndefined;
@@ -1138,8 +1122,8 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
                     eError = OMX_ErrorNoMore;
                 }
                 else {
-                    pTemp = memcpy(pComponentParameterStructure, 
-                        pComponentPrivate->pInPortOverlayFormat, 
+                    pTemp = memcpy(pComponentParameterStructure,
+                        pComponentPrivate->pInPortOverlayFormat,
                         sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                     if(pTemp == NULL){
                         eError = OMX_ErrorUndefined;
@@ -1152,8 +1136,8 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
                     eError = OMX_ErrorNoMore;
                 }
                 else {
-                    pTemp = memcpy(pComponentParameterStructure, 
-                        pComponentPrivate->pOutPortRGBFormat, 
+                    pTemp = memcpy(pComponentParameterStructure,
+                        pComponentPrivate->pOutPortRGBFormat,
                         sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                     if(pTemp == NULL){
                         eError = OMX_ErrorUndefined;
@@ -1166,8 +1150,8 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
                     eError = OMX_ErrorNoMore;
                 }
                 else {
-                    pTemp = memcpy(pComponentParameterStructure, 
-                        pComponentPrivate->pOutPortYUVFormat, 
+                    pTemp = memcpy(pComponentParameterStructure,
+                        pComponentPrivate->pOutPortYUVFormat,
                         sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                     if(pTemp == NULL){
                         eError = OMX_ErrorUndefined;
@@ -1184,10 +1168,10 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
         {
             OMX_PARAM_BUFFERSUPPLIERTYPE *pBuffSupplierParam = (OMX_PARAM_BUFFERSUPPLIERTYPE *)pComponentParameterStructure;
             VPP_DPRINT ("VPP::Inside the GetParameter portindex =%d\n" , (int)pBuffSupplierParam->nPortIndex);
-            if (pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_PORT || 
-                    pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_OVERLAY_PORT || 
-                    pBuffSupplierParam->nPortIndex == OMX_VPP_RGB_OUTPUT_PORT || 
-                    pBuffSupplierParam->nPortIndex == OMX_VPP_YUV_OUTPUT_PORT ) { 
+            if (pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_PORT ||
+                    pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_OVERLAY_PORT ||
+                    pBuffSupplierParam->nPortIndex == OMX_VPP_RGB_OUTPUT_PORT ||
+                    pBuffSupplierParam->nPortIndex == OMX_VPP_YUV_OUTPUT_PORT ) {
 
                 pBuffSupplierParam->eBufferSupplier = pComponentPrivate->sCompPorts[pBuffSupplierParam->nPortIndex].eSupplierSetting;
             }
@@ -1197,8 +1181,8 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
             break;
         }
     case OMX_IndexParamPriorityMgmt:
-        pTemp = memcpy(pComponentParameterStructure, 
-                pComponentPrivate->pPriorityMgmt, 
+        pTemp = memcpy(pComponentParameterStructure,
+                pComponentPrivate->pPriorityMgmt,
                 sizeof(OMX_PRIORITYMGMTTYPE));
         if(pTemp == NULL){
             eError = OMX_ErrorUndefined;
@@ -1212,7 +1196,6 @@ static OMX_ERRORTYPE VPP_GetParameter (OMX_HANDLETYPE hComp,
     }
 EXIT:
     return eError;
-    
 }
 
 /*-------------------------------------------------------------------*/
@@ -1227,13 +1210,13 @@ EXIT:
   *         OMX_Error_BadParameter   The input parameter pointer is null
   **/
 /*-------------------------------------------------------------------*/
-static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp, 
+static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
                                        OMX_INDEXTYPE nParamIndex,
                                        OMX_PTR pCompParam)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     OMX_COMPONENTTYPE* pHandle= (OMX_COMPONENTTYPE*)hComp;
-    VPP_COMPONENT_PRIVATE *pComponentPrivate = NULL; 
+    VPP_COMPONENT_PRIVATE *pComponentPrivate = NULL;
     OMX_VIDEO_PORTDEFINITIONTYPE *pVidDef = NULL;
     OMX_U8 *pTemp = NULL;
 #ifdef KHRONOS_1_1
@@ -1242,30 +1225,29 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
     OMX_CHECK_CMD(hComp, pCompParam, OMX_TRUE);
 
     pComponentPrivate = (VPP_COMPONENT_PRIVATE*)pHandle->pComponentPrivate;
-    
+
     OMX_CHECK_CMD(pComponentPrivate, OMX_TRUE, OMX_TRUE);
 
     if (pComponentPrivate->curState != OMX_StateLoaded) {
         OMX_SET_ERROR_BAIL(eError, OMX_ErrorIncorrectStateOperation);
     }
-    switch (nParamIndex) 
+    switch (nParamIndex)
     {
     case OMX_IndexParamVideoPortFormat:
         {
             OMX_VIDEO_PARAM_PORTFORMATTYPE* pComponentParam = (OMX_VIDEO_PARAM_PORTFORMATTYPE *)pCompParam;
             if (pComponentParam->nPortIndex == pComponentPrivate->pInPortFormat->nPortIndex) {
-                pTemp = memcpy(pComponentPrivate->pInPortFormat, 
-                                            pComponentParam, 
+                pTemp = memcpy(pComponentPrivate->pInPortFormat,
+                                            pComponentParam,
                                             sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                 if(pTemp == NULL){
                     eError = OMX_ErrorUndefined;
                     break;
                 }
-                
             }
             else if (pComponentParam->nPortIndex == pComponentPrivate->pInPortOverlayFormat->nPortIndex) {
-                pTemp = memcpy(pComponentPrivate->pInPortOverlayFormat, 
-                                            pComponentParam, 
+                pTemp = memcpy(pComponentPrivate->pInPortOverlayFormat,
+                                            pComponentParam,
                                             sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                 if(pTemp == NULL){
                     eError = OMX_ErrorUndefined;
@@ -1273,8 +1255,8 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
                 }
             }
             else if (pComponentParam->nPortIndex == pComponentPrivate->pOutPortRGBFormat->nPortIndex) {
-                pTemp = memcpy(pComponentPrivate->pOutPortRGBFormat, 
-                                            pComponentParam, 
+                pTemp = memcpy(pComponentPrivate->pOutPortRGBFormat,
+                                            pComponentParam,
                                             sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                 if(pTemp == NULL){
                     eError = OMX_ErrorUndefined;
@@ -1282,8 +1264,8 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
                 }
             }
             else if (pComponentParam->nPortIndex == pComponentPrivate->pOutPortYUVFormat->nPortIndex) {
-                pTemp = memcpy(pComponentPrivate->pOutPortYUVFormat, 
-                                            pComponentParam, 
+                pTemp = memcpy(pComponentPrivate->pOutPortYUVFormat,
+                                            pComponentParam,
                                             sizeof(OMX_VIDEO_PARAM_PORTFORMATTYPE));
                 if(pTemp == NULL){
                     eError = OMX_ErrorUndefined;
@@ -1296,8 +1278,8 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
             break;
         }
     case OMX_IndexParamVideoInit:
-        pTemp = memcpy(((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeVideo, 
-                pCompParam, 
+        pTemp = memcpy(((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)->pPortParamTypeVideo,
+                pCompParam,
                 sizeof(OMX_PORT_PARAM_TYPE));
         if(pTemp == NULL){
             eError = OMX_ErrorUndefined;
@@ -1351,7 +1333,7 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
                 break;
             }
             pTemp = memcpy (&(((VPP_COMPONENT_PRIVATE*)pHandle->pComponentPrivate)->sCompPorts[portIndex].pPortDef),
-                    pComponentParam, 
+                    pComponentParam,
                     sizeof(OMX_PARAM_PORTDEFINITIONTYPE));
             if(pTemp == NULL){
                 eError = OMX_ErrorUndefined;
@@ -1361,7 +1343,7 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
             /* update nBufferSize */
             pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize = 
                 pComponentParam->format.video.nFrameWidth * pComponentParam->format.video.nFrameHeight;
-            
+
             switch(pComponentPrivate->sCompPorts[portIndex].pPortDef.format.video.eColorFormat) {
                 case OMX_COLOR_FormatYUV420PackedPlanar:
                     pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize*= 3;
@@ -1394,17 +1376,17 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
                     pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize/= 2;
                     break;
                 case OMX_COLOR_FormatL2:
-                    pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize/= 4; 
+                    pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize/= 4;
                     break;
                 case  OMX_COLOR_FormatMonochrome:
-                    pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize/= 8; 
-                    break;  
+                    pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize/= 8;
+                    break;
                 default:
-                    pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize/= 2; 
+                    pComponentPrivate->sCompPorts[portIndex].pPortDef.nBufferSize/= 2;
                     break;
             }
- 
-            VPP_DPRINT("after setparam: %d\n", 
+
+            VPP_DPRINT("after setparam: %d\n",
                 ((VPP_COMPONENT_PRIVATE*)pHandle->pComponentPrivate)->sCompPorts[portIndex].pPortDef.nPortIndex);
 
             if (portIndex == OMX_VPP_YUV_OUTPUT_PORT) {
@@ -1413,26 +1395,26 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
                     pComponentPrivate->pOpYUVFrameStatus->ulCOutOffset = 
                     pComponentPrivate->pOpYUVFrameStatus->ulOutWidth * pComponentPrivate->pOpYUVFrameStatus->ulOutHeight;
                 }
-                else { 
-                    pComponentPrivate->pOpYUVFrameStatus->ulCOutOffset = 0; 
+                else {
+                    pComponentPrivate->pOpYUVFrameStatus->ulCOutOffset = 0;
                 }
             }
             else if (portIndex == OMX_VPP_INPUT_PORT) {
                 pVidDef     = &(pComponentPrivate->sCompPorts[OMX_VPP_INPUT_PORT].pPortDef.format.video);
                 if (pVidDef->eColorFormat == OMX_COLOR_FormatYUV420PackedPlanar) {
                     pComponentPrivate->pIpFrameStatus->ulCInOffset = 
-                    pComponentPrivate->pIpFrameStatus->ulInWidth * pComponentPrivate->pIpFrameStatus->ulInHeight;         
+                    pComponentPrivate->pIpFrameStatus->ulInWidth * pComponentPrivate->pIpFrameStatus->ulInHeight;
                 }
                 else {
-                    pComponentPrivate->pIpFrameStatus->ulCInOffset = 0; 
+                    pComponentPrivate->pIpFrameStatus->ulCInOffset = 0;
                 }
             }
             break;
         }
     case OMX_IndexParamPriorityMgmt:
-        pTemp = memcpy(pComponentPrivate->pPriorityMgmt, 
-            (OMX_PRIORITYMGMTTYPE*)pCompParam, 
-            sizeof(OMX_PRIORITYMGMTTYPE)); 
+        pTemp = memcpy(pComponentPrivate->pPriorityMgmt,
+            (OMX_PRIORITYMGMTTYPE*)pCompParam,
+            sizeof(OMX_PRIORITYMGMTTYPE));
         if(pTemp == NULL){
             eError = OMX_ErrorUndefined;
             break;
@@ -1442,10 +1424,10 @@ static OMX_ERRORTYPE VPP_SetParameter (OMX_HANDLETYPE hComp,
         {
             OMX_PARAM_BUFFERSUPPLIERTYPE *pBuffSupplierParam = (OMX_PARAM_BUFFERSUPPLIERTYPE *)pCompParam;
             /*Verify if it's a correct port index*/
-            if ( pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_PORT || 
-                    pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_OVERLAY_PORT || 
-                    pBuffSupplierParam->nPortIndex == OMX_VPP_RGB_OUTPUT_PORT || 
-                    pBuffSupplierParam->nPortIndex == OMX_VPP_YUV_OUTPUT_PORT ) { 
+            if ( pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_PORT ||
+                    pBuffSupplierParam->nPortIndex == OMX_VPP_INPUT_OVERLAY_PORT ||
+                    pBuffSupplierParam->nPortIndex == OMX_VPP_RGB_OUTPUT_PORT ||
+                    pBuffSupplierParam->nPortIndex == OMX_VPP_YUV_OUTPUT_PORT ) {
                 /* Copy parameters to input port buffer supplier type */
                 pComponentPrivate->sCompPorts[pBuffSupplierParam->nPortIndex].eSupplierSetting = 
                     pBuffSupplierParam->eBufferSupplier;
@@ -1487,9 +1469,9 @@ EXIT:
   *         OMX_Error_BadParameter   The input parameter pointer is null
   **/
 /*-------------------------------------------------------------------*/
-static OMX_ERRORTYPE VPP_GetConfig (OMX_HANDLETYPE hComp, 
-OMX_INDEXTYPE nConfigIndex,
-OMX_PTR ComponentConfigStructure)
+static OMX_ERRORTYPE VPP_GetConfig (OMX_HANDLETYPE hComp,
+                                    OMX_INDEXTYPE nConfigIndex,
+                                    OMX_PTR ComponentConfigStructure)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     OMX_COMPONENTTYPE* pHandle= (OMX_COMPONENTTYPE*)hComp;
@@ -1501,7 +1483,7 @@ OMX_PTR ComponentConfigStructure)
     pComponentPrivate = (VPP_COMPONENT_PRIVATE *)pHandle->pComponentPrivate;
 
     switch(nConfigIndex) 
-    {  
+    {
     case OMX_IndexConfigCommonInputCrop :
         {
             OMX_CONFIG_RECTTYPE *crop = (OMX_CONFIG_RECTTYPE*)ComponentConfigStructure;
@@ -1588,7 +1570,6 @@ OMX_PTR ComponentConfigStructure)
                 pOutputSize->nWidth = pComponentPrivate->pOpRGBFrameStatus->ulOutWidth;
                 pOutputSize->nHeight = pComponentPrivate->pOpRGBFrameStatus->ulOutHeight;
             }
-            
             break;
         }
     default:
@@ -1612,8 +1593,8 @@ EXIT:
   **/
 /*-------------------------------------------------------------------*/
 static OMX_ERRORTYPE VPP_SetConfig (OMX_HANDLETYPE hComp, 
-OMX_INDEXTYPE nConfigIndex,
-OMX_PTR ComponentConfigStructure)
+                                    OMX_INDEXTYPE nConfigIndex,
+                                    OMX_PTR ComponentConfigStructure)
 {
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     OMX_COMPONENTTYPE* pHandle= (OMX_COMPONENTTYPE*)hComp;
@@ -1623,7 +1604,7 @@ OMX_PTR ComponentConfigStructure)
 
     VPP_DPRINT ("VPP::Inside the SetConfig\n");
 
-    switch(nConfigIndex) 
+    switch(nConfigIndex)
     {
     case OMX_IndexConfigCommonColorKey:
         {
@@ -1656,7 +1637,7 @@ OMX_PTR ComponentConfigStructure)
         {
             OMX_U32 nContrast;
             OMX_CONFIG_CONTRASTTYPE *contrast = (OMX_CONFIG_CONTRASTTYPE*)ComponentConfigStructure;
-            
+
             if (contrast->nContrast < VPP_CONTRAST_MIN) {  VPP_DPRINT("Out of range value, setting Contrast to Minimum\n");
                 contrast->nContrast = VPP_CONTRAST_MIN;
             }
@@ -1665,11 +1646,11 @@ OMX_PTR ComponentConfigStructure)
                 VPP_DPRINT("Out of range value, setting Contrast to Maximum\n");
                 contrast->nContrast = VPP_CONTRAST_MAX;
             }
-            
+
             /*Normalize for VGPOP range*/
             nContrast = (OMX_U32) ((contrast->nContrast+VPP_CONTRAST_OFFSET)*VPP_CONTRAST_FACTOR);
-            
-            ((VPP_COMPONENT_PRIVATE*) 
+
+            ((VPP_COMPONENT_PRIVATE*)
                 pHandle->pComponentPrivate)->pIpFrameStatus->ulVideoGain = nContrast;
             break;
         }
@@ -1709,7 +1690,6 @@ OMX_PTR ComponentConfigStructure)
     case OMX_IndexCustomSetZoomFactor :
         {
             OMX_U32 *nZoomfactor = (OMX_U32*)ComponentConfigStructure;
-            
             ((VPP_COMPONENT_PRIVATE*) 
                 pHandle->pComponentPrivate)->pIpFrameStatus->ulZoomFactor = *nZoomfactor;
             break;
@@ -1719,7 +1699,6 @@ OMX_PTR ComponentConfigStructure)
             OMX_U32 *nZoomlimit = (OMX_U32*)ComponentConfigStructure;
             ((VPP_COMPONENT_PRIVATE*) 
                 pHandle->pComponentPrivate)->pIpFrameStatus->ulZoomLimit = *nZoomlimit;
-            
             break;
         }
     case OMX_IndexCustomSetZoomSpeed :
@@ -1727,7 +1706,6 @@ OMX_PTR ComponentConfigStructure)
             OMX_U32 *nZoomspeed = (OMX_U32*)ComponentConfigStructure;
             ((VPP_COMPONENT_PRIVATE*) 
                 pHandle->pComponentPrivate)->pIpFrameStatus->ulZoomSpeed = *nZoomspeed;
-            
             break;
         }
     case OMX_IndexCustomSetFrostedGlassOvly :
@@ -1743,7 +1721,6 @@ OMX_PTR ComponentConfigStructure)
             OMX_U32 *XoffsetFromCenter16 = (OMX_U32*)ComponentConfigStructure;
             ((VPP_COMPONENT_PRIVATE*) 
                 pHandle->pComponentPrivate)->pIpFrameStatus->ulXoffsetFromCenter16 = *XoffsetFromCenter16;
-            
             break;
         }
     case OMX_IndexCustomSetZoomYoffsetFromCenter16 :
@@ -1751,7 +1728,6 @@ OMX_PTR ComponentConfigStructure)
             OMX_U32 *YoffsetFromCenter16 = (OMX_U32*)ComponentConfigStructure;
             ((VPP_COMPONENT_PRIVATE*) 
                 pHandle->pComponentPrivate)->pIpFrameStatus->ulYoffsetFromCenter16 = *YoffsetFromCenter16;
-            
             break;
         }
     case OMX_IndexConfigCommonMirror:
@@ -1765,7 +1741,7 @@ OMX_PTR ComponentConfigStructure)
                 eError = OMX_ErrorBadParameter;
                 goto EXIT;
             }
-            
+
             eMirrorPrev = ((VPP_COMPONENT_PRIVATE*)pHandle->pComponentPrivate)->sCompPorts[nMirror->nPortIndex].eMirror;
             if(eMirrorPrev != OMX_MirrorNone){
                 ((VPP_COMPONENT_PRIVATE*) 
@@ -1781,7 +1757,7 @@ OMX_PTR ComponentConfigStructure)
                     ((VPP_COMPONENT_PRIVATE*)pHandle->pComponentPrivate)->pIpFrameStatus->ulRGBRotation = nMirrorRotation;
                 }
             }
-            
+
             if (nMirror->eMirror == OMX_MirrorHorizontal){
                 ((VPP_COMPONENT_PRIVATE*) pHandle->pComponentPrivate)
                     ->pIpFrameStatus->ulMirror = OMX_TRUE;
@@ -1851,7 +1827,6 @@ OMX_PTR ComponentConfigStructure)
                 eError = OMX_ErrorBadParameter;
                 goto EXIT;
             }
-            
             break;
         }
     case OMX_IndexConfigCommonScale:
@@ -2253,7 +2228,7 @@ static OMX_ERRORTYPE VPP_FillThisBuffer (OMX_HANDLETYPE pComponent,
     }
 
     if ((pBufferHdr->nVersion.s.nVersionMajor != VPP_MAJOR_VER) || 
-            (pBufferHdr->nVersion.s.nVersionMinor != VPP_MINOR_VER) ||            
+            (pBufferHdr->nVersion.s.nVersionMinor != VPP_MINOR_VER) || 
             (pBufferHdr->nVersion.s.nRevision != VPP_REVISION) || 
             (pBufferHdr->nVersion.s.nStep != VPP_STEP)) {
         eError = OMX_ErrorVersionMismatch;

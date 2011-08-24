@@ -26,7 +26,7 @@
 *  in the license agreement under which this software has been supplied.
 * ============================================================================ */
 /**
-* @file OMX_Video_Dec_Thread.h
+* @file H264DecFunctions.h
 *
 * This is an header file for an video Mpeg4 decoder that is fully
 * compliant with the OMX Video specification.
@@ -38,11 +38,16 @@
 * @rev 0.1
 */
 /* --------------------------------------------------------------------------- */
-#ifndef OMX_VIDDEC_THREAD__H
-#define OMX_VIDDEC_THREAD__H
+#ifndef H264FUNC_H
+#define H264FUNC_H
 
-#define EXIT_COMPONENT_THRD  10
+#include "VidDecTest.h"
 
-void* OMX_VidDec_Thread (void* pThreadData);
-void* OMX_VidDec_Return (void* pThreadData, OMX_U32 nPortId, OMX_BOOL bReturnOnlyOne);
-#endif
+#define OMX_H264DEC_NonMIME 1
+
+OMX_ERRORTYPE H264VIDDEC_Fill_Data(MYDATATYPE* pAppData, OMX_BUFFERHEADERTYPE* pBuf);
+OMX_ERRORTYPE H264VIDDEC_SetParamPortDefinition(MYDATATYPE* pAppData);
+OMX_ERRORTYPE H264VIDDEC_AllocateResources(MYDATATYPE* pAppData);
+void H264VIDDEC_FreeResources(MYDATATYPE* pAppData);
+
+#endif /*H264FUNC_H*/

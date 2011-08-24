@@ -56,9 +56,9 @@
 #include <getopt.h>
 #include <sys/types.h>
 
-#define DSP_MMU_FAULT_HANDLING
+#include "OMX_TI_Common.h"
 
-#ifdef DSP_MMU_FAULT_HANDLING
+#ifdef DSP_MMU_FAULT_HANDLING_RELOAD_BASEIMAGE
 #include <dbapi.h>
 #include <DSPManager.h>
 #include <DSPProcessor.h>
@@ -110,6 +110,27 @@
 #define VIDENCTEST_FREE(_p_, _h_)                           \
     VIDENCTEST_ListRemove(_h_, _p_);                        \
     _p_ = NULL;                                             \
+
+#define VIDENCTEST_MALLOC_DSPALIGN(_p_, _s_, _c_, _h_)                  \
+    OMX_MALLOC_SIZE_DSPALIGN(_p_,_s_,_c_)				\
+    if (_p_ == NULL) {                                                  \
+        VIDENCTEST_MTRACE("malloc() error.\n");                         \
+        eError = OMX_ErrorInsufficientResources;                        \
+    }                                                                   \
+    else {                                                              \
+        VIDENCTEST_MTRACE(": %d :memalign() -> %p\n", __LINE__, _p_);     \
+        memset((_p_), 0x0, _s_);                                        \
+        if ((_p_) == NULL) {                                            \
+            VIDENCTEST_MTRACE("memset() error.\n");                     \
+            eError = OMX_ErrorUndefined;                                \
+        }                                                               \
+        else{                                                           \
+            eError = VIDENCTEST_ListAdd(_h_, _p_);                      \
+            if (eError == OMX_ErrorInsufficientResources) {             \
+                VIDENCTEST_MTRACE("malloc() error.\n");                 \
+            }                                                           \
+        }                                                               \
+    }                                                                   \
 
 #define VIDENCTEST_CHECK_ERROR(_e_, _s_)                    \
     if (_e_ != OMX_ErrorNone){                              \
@@ -189,7 +210,7 @@ static int fToQ16(float f)
     return (int)(f*fQ16_Const);
 }
 
-#ifdef DSP_MMU_FAULT_HANDLING
+#ifdef DSP_MMU_FAULT_HANDLING_RELOAD_BASEIMAGE
 static int bInvalid_state;
 int LoadBaseImage();
 #endif
@@ -303,7 +324,7 @@ typedef struct MYDATATYPE {
     int nHeight;
     OMX_U8 eColorFormat;
     OMX_U32 nBitrate;
-    OMX_U8 nFramerate;
+    double nFramerate;
     OMX_U8 eCompressionFormat;
     OMX_U8 eLevel;
     OMX_U32 nOutBuffSize;
@@ -346,7 +367,6 @@ typedef struct MYDATATYPE {
     OMX_BOOL bForceIFrame;
     OMX_U32 nIntraFrameInterval;
     OMX_U32 nGOBHeaderInterval;
-    OMX_U32 nTargetFrameRate;
     OMX_U32 nAIRRate;
     OMX_U32 nTargetBitRate;
     OMX_U32 nStartPortNumber;
@@ -374,6 +394,8 @@ typedef struct MYDATATYPE {
     OMX_U8 NalFormat;
     OMX_U8 bLastOutBuffer;
     OMX_U32  nQPIoF;
+    OMX_BOOL bFromPause;
+    double  nFrameRateoF;
 } MYDATATYPE;
 
 typedef struct EVENT_PRIVATE {
@@ -774,7 +796,7 @@ OMX_ERRORTYPE VIDENCTEST_HandleError(MYDATATYPE* pAppData, OMX_ERRORTYPE eError)
             ;
     }
 
-#ifdef DSP_MMU_FAULT_HANDLING
+#ifdef DSP_MMU_FAULT_HANDLING_RELOAD_BASEIMAGE
     if(bInvalid_state == OMX_TRUE)
     {
         LoadBaseImage();
@@ -822,7 +844,10 @@ OMX_ERRORTYPE VIDENCTEST_SetH264Parameter(MYDATATYPE* pAppData)
     pAppData->pInPortDef->format.video.nFrameWidth = pAppData->nWidth;
     pAppData->pInPortDef->format.video.nFrameHeight = pAppData->nHeight;
 
-
+    if(pAppData->nFrameRateoF > pAppData->nFramerate) {
+        /* TI's SN needs to be configured with maximun value of fps */
+        pAppData->pInPortDef->format.video.xFramerate = fToQ16(pAppData->nFrameRateoF);
+    }
 
     eError = OMX_SetParameter(pHandle, OMX_IndexParamPortDefinition, pAppData->pInPortDef);
     VIDENCTEST_CHECK_EXIT(eError, "Error at SetParameter");
@@ -1005,6 +1030,10 @@ OMX_ERRORTYPE VIDENCTEST_SetMpeg4Parameter(MYDATATYPE* pAppData)
     pAppData->pInPortDef->format.video.nFrameWidth = pAppData->nWidth;
     pAppData->pInPortDef->format.video.nFrameHeight = pAppData->nHeight;
 
+    if(pAppData->nFrameRateoF > pAppData->nFramerate) {
+        /* TI's SN needs to be configured with maximun value of fps */
+        pAppData->pInPortDef->format.video.xFramerate = fToQ16(pAppData->nFrameRateoF);
+    }
     eError = OMX_SetParameter (pHandle, OMX_IndexParamPortDefinition, pAppData->pInPortDef);
     VIDENCTEST_CHECK_EXIT(eError, "Error at SetParameter");
 
@@ -1235,15 +1264,13 @@ OMX_ERRORTYPE VIDENCTEST_AllocateBuffers(MYDATATYPE* pAppData)
 
     for (nCounter = 0; nCounter < NUM_OF_IN_BUFFERS; nCounter++) {
         if (pAppData->bAllocateIBuf == OMX_TRUE) {
-            VIDENCTEST_MALLOC(pAppData->pIBuffer[nCounter], pAppData->nSizeIn + 256, OMX_U8, pListHead);
-            pAppData->pIBuffer[nCounter] += 128;
+            VIDENCTEST_MALLOC_DSPALIGN(pAppData->pIBuffer[nCounter], pAppData->nSizeIn, OMX_U8, pListHead);
             pAppData->pIBuffer[nCounter] = (unsigned char*)pAppData->pIBuffer[nCounter];
         }
     }
     for (nCounter = 0; nCounter < NUM_OF_OUT_BUFFERS; nCounter++) {
         if (pAppData->bAllocateOBuf == OMX_TRUE) {
-            VIDENCTEST_MALLOC(pAppData->pOBuffer[nCounter], pAppData->nSizeOut + 256, OMX_U8, pListHead);
-            pAppData->pOBuffer[nCounter] += 128;
+            VIDENCTEST_MALLOC_DSPALIGN(pAppData->pOBuffer[nCounter], pAppData->nSizeOut, OMX_U8, pListHead);
             pAppData->pOBuffer[nCounter] = (unsigned char*)pAppData->pOBuffer[nCounter];
             }
     }
@@ -1548,6 +1575,7 @@ OMX_ERRORTYPE VIDENCTEST_PassToReady(MYDATATYPE* pAppData)
     pAppData->nOutBufferCount = NUM_OF_OUT_BUFFERS;
 
     pAppData->bLastOutBuffer = 0;
+    pAppData->bFromPause = OMX_FALSE;
 
 
 EXIT:
@@ -1588,20 +1616,6 @@ OMX_ERRORTYPE VIDENCTEST_Starting(MYDATATYPE* pAppData)
     }
     eError = OMX_SetConfig(pHandle, pAppData->nVideoEncodeCustomParamIndex, &(pAppData->nIntraFrameInterval));
     VIDENCTEST_CHECK_EXIT(eError, "Error in OMX_SetConfig function");
-
-    /* This test only applies to MPEG4/H.263 encoding */
-    if (pAppData->eCompressionFormat == OMX_VIDEO_CodingMPEG4 ||
-        pAppData->eCompressionFormat == OMX_VIDEO_CodingH263) {
-        /* SR10540: Set the Target Frame Rate at run-time using a custom OMX index */
-        eError = OMX_GetExtensionIndex(pHandle,
-                                       "OMX.TI.VideoEncode.Config.TargetFrameRate",
-                                       (OMX_INDEXTYPE*)(&(pAppData->nVideoEncodeCustomParamIndex)));
-        VIDENCTEST_CHECK_EXIT(eError, "Error in OMX_GetExtensionIndex function");
-
-        pAppData->nTargetFrameRate = pAppData->nFramerate; /* Refer to DSP socket node interface guide for usage */
-        eError = OMX_SetConfig(pHandle, pAppData->nVideoEncodeCustomParamIndex, &(pAppData->nTargetFrameRate));
-        VIDENCTEST_CHECK_EXIT(eError, "Error in OMX_SetConfig function");
-    }
 
     /* SR10523: Set the AIRRate at run-time using a custom OMX index */
     eError = OMX_GetExtensionIndex(pHandle,
@@ -1648,11 +1662,26 @@ OMX_ERRORTYPE VIDENCTEST_Starting(MYDATATYPE* pAppData)
 
 
 
+    if(pAppData->bFromPause == OMX_FALSE) {
     for (nCounter = 0; nCounter < nBuffersToSend; nCounter++) {
         pAppData->pOutBuff[nCounter]->nFilledLen = 0;
         eError = pAppData->pComponent->FillThisBuffer(pHandle, pAppData->pOutBuff[nCounter]);
         VIDENCTEST_CHECK_EXIT(eError, "Error in FillThisBuffer");
         pAppData->nOutBufferCount--;
+        }
+    }
+
+    /* It is needed to set the framerate to the original value */
+    if(pAppData->nFrameRateoF > pAppData->nFramerate) {
+        OMX_ERRORTYPE eError;
+        OMX_CONFIG_FRAMERATETYPE FrameRateType;
+        FrameRateType.nSize = sizeof(OMX_CONFIG_FRAMERATETYPE);
+        FrameRateType.nPortIndex = OMX_DirInput;
+        FrameRateType.xEncodeFramerate = fToQ16(pAppData->nFramerate);
+        eError = OMX_SetConfig(pHandle, OMX_IndexConfigVideoFramerate, &FrameRateType);
+        if(eError != OMX_ErrorNone) {
+            LOGE("Error!!! Coud not change framerate value");
+        }
     }
 
     /* Send EmptyThisBuffer to OMX Video Encoder */
@@ -2151,7 +2180,7 @@ EXIT:
 OMX_ERRORTYPE VIDENCTEST_CheckOptionalArgs(MYDATATYPE* pAppData, int argc, char* argv []){
     OMX_ERRORTYPE eError = OMX_ErrorNone;
     int next_option;
-    const char* const short_options = "m:r:i:p:e:n";
+    const char* const short_options = "m:r:i:p:e:n:q:u:f";
     const struct option long_options[] = {
         {"nMIRRate",    1, NULL, 'm'},
         {"nResyncMarker",   1, NULL, 'r'},
@@ -2161,6 +2190,7 @@ OMX_ERRORTYPE VIDENCTEST_CheckOptionalArgs(MYDATATYPE* pAppData, int argc, char*
         {"NALFormat",   1, NULL, 'n'},
         {"nQPIoF", 1, NULL, 'q'},
         {"nUnrestrictedMV", 1, NULL, 'u'},
+        {"nFrameRateoF", 1, NULL, 'f'},
         {NULL,          0, NULL,   0}
     };
 
@@ -2200,6 +2230,10 @@ OMX_ERRORTYPE VIDENCTEST_CheckOptionalArgs(MYDATATYPE* pAppData, int argc, char*
             case 'u':
                 printf("%d nUnrestrictedMV found, Value= %s\n",next_option,optarg);
                 pAppData->nUnrestrictedMV=atoi(optarg);
+                break;
+            case 'f':
+                printf("%d nFrameRateoF found, Value= %s\n", next_option, optarg);
+                pAppData->nFrameRateoF = atof(optarg);
                 break;
             case -1:
                 break;
@@ -2252,6 +2286,7 @@ OMX_ERRORTYPE VIDENCTEST_CheckArgs(int argc, char** argv, MYDATATYPE** pAppDataT
     pAppData->NalFormat = 0;
     pAppData->nQPIoF = 0;
     pAppData->bForceIFrame = 0;
+    pAppData->nFrameRateoF = 0.0;
 
 
     if (argc < 15){
@@ -2310,7 +2345,7 @@ OMX_ERRORTYPE VIDENCTEST_CheckArgs(int argc, char** argv, MYDATATYPE** pAppDataT
             printf("**Warning: Input argument BITRATE outside of tested range, behavior of component unknown.\n");
         }
 
-        pAppData->nFramerate = atoi(argv[7]);
+        pAppData->nFramerate = atof(argv[7]);
         if(pAppData->nFramerate < 7 || pAppData->nFramerate > 30) {
             printf("**Warning: Input argument FRAMERATE outside of tested range, behavior of component unknown.\n");
         }
@@ -2449,6 +2484,7 @@ OMX_ERRORTYPE VIDENCTEST_Confirm(MYDATATYPE* pAppData)
             VIDENCTEST_CHECK_EXIT(eError, "Error at OMX_SendCommand function");
             break;
         case VIDENCTEST_PauseResume:
+            pAppData->bFromPause = OMX_TRUE;
         case VIDENCTEST_StopRestart:
             if (pAppData->bStop == OMX_TRUE) {
                 if(pAppData->eTypeOfTest == VIDENCTEST_StopRestart) {
@@ -2553,8 +2589,7 @@ OMX_ERRORTYPE VIDENCTEST_HandlePortDisable(MYDATATYPE* pAppData, OMX_U32 ePort)
 
             for (nCounter = 0; nCounter < NUM_OF_IN_BUFFERS; nCounter++) {
                 if (pAppData->bAllocateIBuf == OMX_TRUE) {
-                    VIDENCTEST_MALLOC(pAppData->pIBuffer[nCounter], pAppData->nSizeIn + 256, OMX_U8, pListHead);
-                    pAppData->pIBuffer[nCounter] += 128;
+                    VIDENCTEST_MALLOC_DSPALIGN(pAppData->pIBuffer[nCounter], pAppData->nSizeIn, OMX_U8, pListHead);
                     pAppData->pIBuffer[nCounter] = (unsigned char*)pAppData->pIBuffer[nCounter];
                 }
             }
@@ -2616,8 +2651,7 @@ OMX_ERRORTYPE VIDENCTEST_HandlePortEnable(MYDATATYPE* pAppData, OMX_U32 ePort)
 
         for (nCounter = 0; nCounter < NUM_OF_OUT_BUFFERS; nCounter++) {
             if (pAppData->bAllocateOBuf == OMX_TRUE) {
-                VIDENCTEST_MALLOC(pAppData->pOBuffer[nCounter], pAppData->nSizeOut + 256, OMX_U8, pListHead);
-                pAppData->pOBuffer[nCounter] += 128;
+                VIDENCTEST_MALLOC_DSPALIGN(pAppData->pOBuffer[nCounter], pAppData->nSizeOut, OMX_U8, pListHead);
                 pAppData->pOBuffer[nCounter] = (unsigned char*)pAppData->pOBuffer[nCounter];
             }
         }
@@ -2689,7 +2723,7 @@ OMX_ERRORTYPE VIDENCTEST_HandleEventError(MYDATATYPE* pAppData, OMX_U32 eErr, OM
      case OMX_ErrorOverflow:
         break;
      case OMX_ErrorInvalidState:
-#ifdef DSP_MMU_FAULT_HANDLING
+#ifdef DSP_MMU_FAULT_HANDLING_RELOAD_BASEIMAGE
         bInvalid_state = OMX_TRUE;
 #endif
      case OMX_ErrorHardware:
@@ -2752,7 +2786,7 @@ int main(int argc, char** argv)
     sigset_t set;
 
     nTimeCount = 0;
-#ifdef DSP_MMU_FAULT_HANDLING
+#ifdef DSP_MMU_FAULT_HANDLING_RELOAD_BASEIMAGE
     bInvalid_state = OMX_FALSE;
 #endif
     OMX_OTHER_EXTRADATATYPE_1_1_2 *pExtraDataType;
@@ -2851,6 +2885,11 @@ int main(int argc, char** argv)
                 case OMX_EventError:
                     eError = VIDENCTEST_HandleEventError(pAppData, nData1, nData2);
                     VIDENCTEST_CHECK_ERROR(eError, "Fatal EventError");
+                    if(nData1 == OMX_ErrorInvalidState) {
+                        printf("\n------VIDENCTEST FATAL ERROR-------\n Component in reported invalid state \n");
+                        VIDENCTEST_HandleError(pAppData, OMX_ErrorInvalidState);
+                        goto EXIT;
+                    }
                     break;
                 case OMX_EventMax:
                     VIDENCTEST_PRINT("OMX_EventMax recived, nothing to do\n");
@@ -2905,14 +2944,26 @@ int main(int argc, char** argv)
                     pAppData->nInBufferCount--;
                 }
 
-                if(pAppData->eTypeOfTest != VIDENCTEST_FullRecord){
-                    if(pAppData->nCurrentFrameIn == pAppData->nReferenceFrame){
+                
+                if(pAppData->nCurrentFrameIn == pAppData->nReferenceFrame){
+                    if(pAppData->eTypeOfTest != VIDENCTEST_FullRecord){
                         pAppData->eCurrentState = VIDENCTEST_StateStopping;
                         if(pAppData->eTypeOfTest == VIDENCTEST_PauseResume) {
                             eError = pAppData->pComponent->EmptyThisBuffer(pHandle, pBuffer);
                             VIDENCTEST_CHECK_ERROR(eError, "Error at EmptyThisBuffer function");
                             pAppData->nInBufferCount--;
                             pAppData->nCurrentFrameIn++;
+                        }
+                    }
+                    if(pAppData->nFrameRateoF != 0.0) {
+                        OMX_ERRORTYPE eError;
+                        OMX_CONFIG_FRAMERATETYPE FrameRateType;
+                        FrameRateType.nSize = sizeof(OMX_CONFIG_FRAMERATETYPE);
+                        FrameRateType.nPortIndex = OMX_DirInput;
+                        FrameRateType.xEncodeFramerate = fToQ16(pAppData->nFrameRateoF);
+                        eError = OMX_SetConfig(pHandle, OMX_IndexConfigVideoFramerate, &FrameRateType);
+                        if(eError != OMX_ErrorNone) {
+                            LOGE("Error!!! Coud not change framerate value on the fly");
                         }
                     }
                 }
@@ -3056,7 +3107,7 @@ EXIT:
     return eError;
 }
 
-#ifdef DSP_MMU_FAULT_HANDLING
+#ifdef DSP_MMU_FAULT_HANDLING_RELOAD_BASEIMAGE
 int LoadBaseImage()
 {
     unsigned int uProcId = 0;   /* default proc ID is 0. */
@@ -3064,7 +3115,7 @@ int LoadBaseImage()
 
     struct DSP_PROCESSORINFO dspInfo;
     DSP_HPROCESSOR hProc;
-    DSP_STATUS status = DSP_SOK;
+    int status = 0;
     unsigned int numProcs;
     char* argv[2];
 
@@ -3080,7 +3131,7 @@ int LoadBaseImage()
         if ((dspInfo.uProcessorType == DSPTYPE_55) ||
             (dspInfo.uProcessorType == DSPTYPE_64)) {
             uProcId = index;
-            status = DSP_SOK;
+            status = 0;
             break;
         }
         index++;

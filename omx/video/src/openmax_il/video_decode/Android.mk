@@ -5,13 +5,13 @@ include $(CLEAR_VARS)
 LOCAL_PRELINK_MODULE := false
 
 LOCAL_SRC_FILES:= \
-	src/OMX_VideoDec_Thread.c		\
-	src/OMX_VideoDec_Utils.c		\
-	src/OMX_VideoDecoder.c
+	src/OMX_VideoDec_Thread.c \
+	src/OMX_VideoDec_Utils.c \
+	src/OMX_VideoDecoder.c \
 
 LOCAL_C_INCLUDES := $(TI_OMX_COMP_C_INCLUDES) \
 	$(TI_OMX_VIDEO)/video_decode/inc \
-	
+	$(TOP)/hardware/ti/omap3/liboverlay \
 
 ifeq ($(PERF_INSTRUMENTATION),1)
 LOCAL_C_INCLUDES += \

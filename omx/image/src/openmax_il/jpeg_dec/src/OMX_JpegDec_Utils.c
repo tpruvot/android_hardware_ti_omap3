@@ -2497,7 +2497,7 @@ void JpegDec_FatalErrorRecover(JPEGDEC_COMPONENT_PRIVATE *pComponentPrivate, con
                                        OMX_EventError,
                                        OMX_ErrorInvalidState,
                                        OMX_TI_ErrorSevere,
-                                       error_msg);
+                                       (OMX_PTR) error_msg);
     OMX_ERROR4(pComponentPrivate->dbg, "Completed FatalErrorRecover \
                \nEntering Invalid State\n");
 }

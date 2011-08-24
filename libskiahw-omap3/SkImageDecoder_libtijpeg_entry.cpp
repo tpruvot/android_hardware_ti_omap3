@@ -34,7 +34,11 @@
 
 #include "SkImageDecoder_libtijpeg_entry.h"
 
-#define PRINTF SkDebugf
+#ifdef DEBUG_LOG
+# define PRINTF SkDebugf
+#else
+# define PRINTF
+#endif
 
 const int DESIRED_LOAD = 1;
 const int MAX_DEL_ATTEMPTS = 3;

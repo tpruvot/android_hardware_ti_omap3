@@ -34,8 +34,12 @@
 
 #include "SkImageDecoder_libtijpeg.h"
 
-#define PRINTF // SkDebugf
-//#define PRINTF printf
+#ifdef DEBUG_LOG
+# define PRINTF SkDebugf
+#else
+# define PRINTF
+#endif
+
 #define TIME_DECODE
 #define JPEG_DECODER_DUMP_INPUT_AND_OUTPUT 0 // set directory persmissions for /temp as 777
 

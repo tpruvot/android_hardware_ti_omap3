@@ -42,6 +42,8 @@ LOCAL_C_INCLUDES += \
 	$(OMX_VENDOR_INCLUDES)
 
 LOCAL_CFLAGS += -fpic -fstrict-aliasing
+LOCAL_CFLAGS += -DDEBUG_LOG
+LOCAL_CFLAGS += -DOPTIMIZE
 
 LOCAL_SRC_FILES+= \
    SkImageUtility.cpp \

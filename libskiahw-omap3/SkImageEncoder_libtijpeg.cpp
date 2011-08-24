@@ -35,8 +35,12 @@
 #include "SkImageEncoder_libtijpeg.h"
 #include "SkTime.h"
 
-#define PRINTF // SkDebugf
-//#define PRINTF printf
+#ifdef DEBUG_LOG
+# define PRINTF SkDebugf
+#else
+# define PRINTF
+#endif
+
 #define TIME_ENCODE
 #define EVEN_RES_ONLY 1   //true if odd resolution encode support enabled using SW codec
 #define MULTIPLE 2 //image width must be a multiple of this number

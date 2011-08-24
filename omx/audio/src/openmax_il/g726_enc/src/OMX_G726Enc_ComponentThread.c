@@ -50,11 +50,7 @@
 ****************************************************************/
 /* ----- system and platform files ----------------------------*/
 
-#ifdef UNDER_CE
-#include <windows.h>
-#include <oaf_osal.h>
-#include <omx_core.h>
-#else
+
 #include <dbapi.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -67,7 +63,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#endif
 /*-------program files ----------------------------------------*/
 #include "OMX_G726Enc_Utils.h"
 
@@ -122,12 +117,12 @@ void* G726ENC_CompThread(void* pThreadData)
              G726ENC_DPRINT("%d :: Component Time Out !!!!! \n",__LINE__);
         } else if(-1 == status) {
             G726ENC_DPRINT("%d :: Error in Select\n", __LINE__);
-            pComponentPrivate->cbInfo.EventHandler ( pHandle,
-                             						 pHandle->pApplicationPrivate,
-                             						 OMX_EventError,
-                             						 OMX_ErrorInsufficientResources,
-                             						 0,
-                             						 "Error from CompThread in select");
+            pComponentPrivate->cbInfo.EventHandler( pHandle,
+                                                    pHandle->pApplicationPrivate,
+                                                    OMX_EventError,
+                                                    OMX_ErrorInsufficientResources,
+                                                    0,
+                                                    "Error from CompThread in select");
             eError = OMX_ErrorInsufficientResources;
 
         } else if(FD_ISSET (pComponentPrivate->cmdPipe[0], &rfds)) {
@@ -141,13 +136,13 @@ void* G726ENC_CompThread(void* pThreadData)
                 }
                 pComponentPrivate->curState = OMX_StateLoaded;
 
-                if (pComponentPrivate->bPreempted == 0) { 
+                if (pComponentPrivate->bPreempted == 0) {
                     pComponentPrivate->cbInfo.EventHandler( pHandle,
-                                                        pHandle->pApplicationPrivate,
-                                                        OMX_EventCmdComplete,
-                                                        OMX_ErrorNone,
-                                                        pComponentPrivate->curState,
-                                                        NULL);
+                                                            pHandle->pApplicationPrivate,
+                                                            OMX_EventCmdComplete,
+                                                            OMX_ErrorNone,
+                                                            pComponentPrivate->curState,
+                                                            NULL);
                  }
                  else {
                      pComponentPrivate->cbInfo.EventHandler(
@@ -155,7 +150,7 @@ void* G726ENC_CompThread(void* pThreadData)
                      OMX_EventError,
                      OMX_ErrorResourcesLost,pComponentPrivate->curState, NULL);
                      pComponentPrivate->bPreempted = 0;
-                 }   
+                 }
             }
 
         } else if (FD_ISSET (pComponentPrivate->dataPipe[0], &rfds)) {

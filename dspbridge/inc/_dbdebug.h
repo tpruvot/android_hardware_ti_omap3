@@ -53,7 +53,7 @@ extern "C" {
 
 /* statically configure debug level */
 #ifdef DDSP_DEBUG_PRODUCT
-#define DSPAPI_DEBUG_LEVEL DSPAPI_ZONE_WARNING
+#define DSPAPI_DEBUG_LEVEL DSPAPI_ZONE_TEST
 #else				/* default debug level */
 #define DSPAPI_DEBUG_LEVEL DSPAPI_ZONE_WARNING
 #endif

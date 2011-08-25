@@ -89,6 +89,8 @@
 #include <dsptrap.h>
 
 /*  ----------------------------------- This */
+#define DDSP_DEBUG_PRODUCT
+
 #include "_dbdebug.h"
 #include "_dbpriv.h"
 

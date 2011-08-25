@@ -450,6 +450,8 @@ OMX_U32 SkTIJPEGImageDecoder::JpegHeader_GetMarkerInfo (OMX_U32 Marker, OMX_U8* 
             JpgHdrInfo->nHeight = Get16m(MarkerData+3);
             JpgHdrInfo->nWidth = Get16m(MarkerData+5);
             JpgHdrInfo->nFormat = GetYUVformat(MarkerData);
+            PRINTF("Image Width x Height = %u * %u\n", Get16m(MarkerData+5), Get16m(MarkerData+3)  );
+
             switch (JpgHdrInfo->nFormat) {
             case OMX_COLOR_FormatYUV420Planar:
                 PRINTF("Image chroma format is OMX_COLOR_FormatYUV420Planar\n");
@@ -471,7 +473,7 @@ OMX_U32 SkTIJPEGImageDecoder::JpegHeader_GetMarkerInfo (OMX_U32 Marker, OMX_U8* 
                  JpgHdrInfo->nFormat = OMX_COLOR_FormatUnused;
                  break;
             }
-            PRINTF("Image Width x Height = %u * %u\n", Get16m(MarkerData+5), Get16m(MarkerData+3)  );
+            //PRINTF("Image Width x Height = %u * %u\n", Get16m(MarkerData+5), Get16m(MarkerData+3)  );
             /*
             PRINTF("JPEG image is %uw * %uh,\n", Get16m(Data+3), Get16m(Data+5)  );
 
@@ -776,6 +778,9 @@ bool SkTIJPEGImageDecoder::onDecode(SkImageDecoder* dec_impl, SkStream* stream, 
 
     nInWidth = JpegHeaderInfo.nWidth;
     nInHeight = JpegHeaderInfo.nHeight;
+    PRINTF("JpegHeaderInfo.nWidth = %d\n", nInWidth);
+    PRINTF("JpegHeaderInfo.nHeight = %d\n", nInHeight);
+
     /*check for the maximum resolution and set to its upper limit which is supported by the codec.
       So that TI DSP Codec will take care of scaling down before decoding and updates the
       outputresolution parameter in UALGOutParams structure.

@@ -137,7 +137,7 @@ private:
 
 	typedef struct JPEG_HEADER_INFO {
 		int nWidth;
-		int nHeight ;
+		int nHeight;
 		int nFormat;
 		int nProgressive;
                 OMX_U8 SOF0_Nf;

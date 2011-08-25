@@ -5,6 +5,10 @@ ifeq ($(TARGET_BOARD_PLATFORM),omap3)
 
 LOCAL_PATH:= $(call my-dir)
 
+TI_OMX_TOP ?= $(TOP)/hardware/ti/omx
+TI_OMX_IMAGE ?= $(TI_OMX_TOP)/image/src/openmax_il
+TI_OMX_SYSTEM ?= $(TI_OMX_TOP)/system/src/openmax_il
+
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES:= \
@@ -36,12 +40,13 @@ LOCAL_SRC_FILES += \
     JpegEncoderEXIF.cpp \
 
 LOCAL_C_INCLUDES += \
-    hardware/ti/omap3/dspbridge/api/inc \
-    hardware/ti/omap3/omx/system/src/openmax_il/lcml/inc \
-    hardware/ti/omap3/omx/system/src/openmax_il/omx_core/inc \
-    hardware/ti/omap3/omx/system/src/openmax_il/common/inc \
-    hardware/ti/omap3/omx/image/src/openmax_il/jpeg_enc/inc \
-    external/libexif
+    $(TOP)/hardware/ti/omap3/dspbridge/api/inc \
+    $(TOP)/hardware/ti/omap3/dspbridge/inc \
+    $(TI_OMX_TOP)/system/src/openmax_il/lcml/inc \
+    $(TI_OMX_TOP)/system/src/openmax_il/omx_core/inc \
+    $(TI_OMX_TOP)/system/src/openmax_il/common/inc \
+    $(TI_OMX_TOP)/image/src/openmax_il/jpeg_enc/inc \
+    $(TOP)/external/libexif
 
 LOCAL_CFLAGS += -O0 -g3 -fpic -fstrict-aliasing -DIPP_LINUX -D___ANDROID___ -DHARDWARE_OMX
 
@@ -51,7 +56,7 @@ LOCAL_SHARED_LIBRARIES += \
     libOMX_Core
 
 LOCAL_STATIC_LIBRARIES := \
-	libexifgnu
+    libexifgnu
 
 endif
 
@@ -59,8 +64,8 @@ endif
 ifdef FW3A
 
 LOCAL_C_INCLUDES += \
-    hardware/ti/omap3/fw3A/include/ \
-	hardware/ti/omap3/fw3A/include/fw/api/linux/
+    $(TOP)/hardware/ti/omap3/fw3A/include \
+    $(TOP)/hardware/ti/omap3/fw3A/include/fw/api/linux
 
 LOCAL_SHARED_LIBRARIES += \
     libdl \
@@ -74,8 +79,8 @@ endif
 ifdef IMAGE_PROCESSING_PIPELINE
 
 LOCAL_C_INCLUDES += \
-	hardware/ti/omap3/mm_isp/ipp/inc \
-	hardware/ti/omap3/mm_isp/capl/inc \
+    $(TOP)/hardware/ti/omap3/mm_isp/ipp/inc \
+    $(TOP)/hardware/ti/omap3/mm_isp/capl/inc \
 
 LOCAL_SHARED_LIBRARIES += \
     libcapl \
@@ -98,9 +103,10 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := JpegEncoderTest.cpp
 
-LOCAL_C_INCLUDES := hardware/ti/omx/system/src/openmax_il/omx_core/inc\
-                    hardware/ti/omx/image/src/openmax_il/jpeg_enc/inc \
-                    external/libexif \
+LOCAL_C_INCLUDES := \
+    $(TI_OMX_TOP)/system/src/openmax_il/omx_core/inc\
+    $(TI_OMX_TOP)/image/src/openmax_il/jpeg_enc/inc \
+    $(TOP)/external/libexif \
 
 LOCAL_SHARED_LIBRARIES := libcamera
 
@@ -112,7 +118,6 @@ include $(BUILD_EXECUTABLE)
 endif
 
 ################################################
-
 
 endif
 endif

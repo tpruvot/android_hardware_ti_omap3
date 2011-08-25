@@ -2,7 +2,7 @@ ifeq ($(TARGET_BOARD_PLATFORM),omap3)
 
 ifdef HARDWARE_OMX
 
-TI_OMX_TOP ?= $(TOP)/hardware/ti/omap3/omx
+TI_OMX_TOP ?= $(TOP)/hardware/ti/omx
 TI_OMX_IMAGE ?= $(TI_OMX_TOP)/image/src/openmax_il
 TI_OMX_SYSTEM ?= $(TI_OMX_TOP)/system/src/openmax_il
 

@@ -393,7 +393,6 @@ DBAPI DSPManager_GetProcResourceInfo(UINT *pBuf, UINT *pSize)
 
     return status;
 }
-#endif
 
 DBAPI DSPManager_Force_Recovery()
 {
@@ -404,3 +403,5 @@ DBAPI DSPManager_Force_Recovery()
 
 	return status;
 }
+#endif
+
